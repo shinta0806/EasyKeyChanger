@@ -262,3 +262,7 @@ __pycache__/
 
 Win32/
 *.filters
+
+# misc
+*.old*
+*.new*

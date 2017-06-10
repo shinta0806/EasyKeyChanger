@@ -165,8 +165,8 @@ private:
 	// 前回変換時のクロスフェード幅 [s]
 	int mPrevCrossTime;
 
-	// 入力メディアの WAVE フォーマット
-	WAVEFORMATEX mWaveFormat;
+	// 出力メディアの WAVE フォーマット
+	WAVEFORMATEX mWaveFormatOut;
 
 	// 指示待ち用サーバー
 	CWebServer* mWebServer;
@@ -232,6 +232,9 @@ private:
 
 	// メディアの情報をコピー
 	HRESULT CopyHeader(IMediaSample* oIn, IMediaSample* oOut);
+
+	// 不正な音声情報を修正
+	bool FixBadWaveFormat(WAVEFORMATEX* oWaveFormat);
 
 	// 切り出し幅テーブル、クロスフェードテーブルの初期化
 	void InitTimeTable();

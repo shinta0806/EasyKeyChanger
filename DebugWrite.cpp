@@ -68,7 +68,7 @@ void DebugWriteFunc(const wstring& oMsg)
 			throw - 1;
 		}
 		DWORD aWroteBytes;
-		if (!WriteFile(aFile, aWriteMsg.c_str(), aWriteMsg.length() * 2, &aWroteBytes, NULL)) {
+		if (!WriteFile(aFile, aWriteMsg.c_str(), static_cast<DWORD>(aWriteMsg.length()) * 2, &aWroteBytes, NULL)) {
 			throw - 1;
 		}
 	}

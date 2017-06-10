@@ -12,10 +12,11 @@
 
 // ----------------------------------------------------------------------------
 // システムから呼びだされる順番は、以下のようになっている模様
-//   CheckInputType()
+// 再生中に音声トラックが変更された場合は、◆の関数が再度呼ばれる
+//   CheckInputType() ◆
 //   CompleteConnect() ※入力側
 //   GetMediaType() ※複数回
-//   CheckTransform() ※複数回
+//   CheckTransform() ※複数回 ◆
 //   CompleteConnect() ※出力側
 //   DecideBufferSize()
 //   Transform() ※複数回
@@ -53,7 +54,7 @@ CEasyKeyChanger::CEasyKeyChanger(TCHAR* oName, LPUNKNOWN oUnknown, HRESULT* oHRe
 	: BASE(oName, oUnknown, CLSID_EasyKeyChanger)
 {
 #ifdef DEBUGWRITE
-	DebugWrite(L"CEasyKeyChanger() ==================== CEasyKeyChanger Ver 1a START ====================");
+	DebugWrite(L"CEasyKeyChanger() ==================== CEasyKeyChanger Ver 1b START ====================");
 	DebugWrite(L"CEasyKeyChanger() DEBUGWRITE mode");
 #endif
 
@@ -66,7 +67,7 @@ CEasyKeyChanger::CEasyKeyChanger(TCHAR* oName, LPUNKNOWN oUnknown, HRESULT* oHRe
 	mPrevKeyShift = 0;
 	mPrevCutTime = 0;
 	mPrevCrossTime = 0;
-	ZeroMemory(&mWaveFormat, sizeof(mWaveFormat));
+	ZeroMemory(&mWaveFormatOut, sizeof(mWaveFormatOut));
 	mWebServer = NULL;
 
 	// 変換処理用の初期化
@@ -140,6 +141,9 @@ HRESULT CEasyKeyChanger::CheckTransform(const CMediaType* oMtIn, const CMediaTyp
 
 	HRESULT aHResult;
 
+	// 変換可能かどうかのフラグを一旦リセット
+	mTransformable = false;
+
 	aHResult = CheckTypeCore(oMtIn);
 	if (FAILED(aHResult)) {
 		return aHResult;
@@ -165,12 +169,33 @@ HRESULT CEasyKeyChanger::CheckTransform(const CMediaType* oMtIn, const CMediaTyp
 		}
 
 		// WAVE フォーマットの確認
-		mWaveFormat = *reinterpret_cast<WAVEFORMATEX*>(oMtIn->Format());
-		if (mWaveFormat.nChannels != NUM_CHANNEL_2) {
+		WAVEFORMATEX aWaveFormatIn = *reinterpret_cast<WAVEFORMATEX*>(oMtIn->Format());
+		DebugWrite(L"CheckTransform() a");
+		if (aWaveFormatIn.nChannels != NUM_CHANNEL_2) {
 			throw L"音声データのチャンネル数がステレオではありません。";
 		}
-		if (mWaveFormat.wBitsPerSample != BITS_PER_SAMPLE_16) {
+		if (aWaveFormatIn.wBitsPerSample != BITS_PER_SAMPLE_16) {
 			throw L"音声データのビット深度が 16 ではありません。";
+		}
+
+		// 必要に応じて出力フォーマットの設定を行う
+		// （FLAC のように設定するとうまく動作しないフィルターもあるため、なるべく設定を行わない）
+		bool aNeedSetup = false;
+
+		// 修正
+		if (FixBadWaveFormat(&aWaveFormatIn)) {
+			aNeedSetup = true;
+		}
+
+		if (mWaveFormatOut.nAvgBytesPerSec != 0 && mWaveFormatOut.nAvgBytesPerSec != aWaveFormatIn.nAvgBytesPerSec) {
+			// 再生中の音声トラック変更によりフォーマットが変更された場合
+			aNeedSetup = true;
+		}
+
+		// 出力設定
+		mWaveFormatOut = aWaveFormatIn;
+		if (aNeedSetup) {
+			mOutputMedia->SetFormat(reinterpret_cast<BYTE*>(&mWaveFormatOut), sizeof(mWaveFormatOut));
 		}
 
 		// 変換可能
@@ -520,6 +545,56 @@ HRESULT CEasyKeyChanger::CopyHeader(IMediaSample* oIn, IMediaSample* oOut)
 }
 
 // ----------------------------------------------------------------------------
+// 不正な音声情報を修正
+// 一部の上流フィルターがハイレゾ音源の音声情報を正しく通知してこないため、修正
+// （65536Hz 以上のサンプリングレートの場合、上位ビットが欠落している）
+// ＜返値＞ 修正したら true
+// ----------------------------------------------------------------------------
+bool CEasyKeyChanger::FixBadWaveFormat(WAVEFORMATEX* oWaveFormat)
+{
+	DWORD aFixedSamplesPerSec = 0;
+
+	switch (oWaveFormat->nSamplesPerSec) {
+	case 0x5888:
+		// 88.2kHz
+		aFixedSamplesPerSec = 0x15888;
+		break;
+	case 0x7700:
+		// 96kHz
+		aFixedSamplesPerSec = 0x17700;
+		break;
+	case 0xB110:
+		// 176.4kHz
+		aFixedSamplesPerSec = 0x2B110;
+		break;
+	case 0xEE00:
+		// 192kHz
+		aFixedSamplesPerSec = 0x2EE00;
+		break;
+	case 0x6220:
+		// 352.8kHz
+		aFixedSamplesPerSec = 0x56220;
+		break;
+	case 0xDC00:
+		// 384kHz
+		aFixedSamplesPerSec = 0x5DC00;
+		break;
+	default:
+		break;
+	}
+
+	if (aFixedSamplesPerSec == 0) {
+		return false;
+	}
+
+	// サンプリングレート等を修正
+	DebugWrite(L"~FixBadWaveFormat() Fix");
+	oWaveFormat->nSamplesPerSec = aFixedSamplesPerSec;
+	oWaveFormat->nAvgBytesPerSec = aFixedSamplesPerSec * oWaveFormat->nBlockAlign;
+	return true;
+}
+
+// ----------------------------------------------------------------------------
 // 切り出し幅テーブル、クロスフェード幅テーブルの初期化
 // ----------------------------------------------------------------------------
 void CEasyKeyChanger::InitTimeTable()
@@ -710,7 +785,7 @@ HRESULT CEasyKeyChanger::SetupOutputMedia(const CMediaType& oMtIn)
 void CEasyKeyChanger::SetupTransform(int oNewKey, int oNewCutTime, int oNewCrossTime)
 {
 	// 切り出し幅 [Frame] を決める
-	mCutFrames = static_cast<int>(round(oNewCutTime / 1000.0 * mWaveFormat.nSamplesPerSec));
+	mCutFrames = static_cast<int>(round(oNewCutTime / 1000.0 * mWaveFormatOut.nSamplesPerSec));
 	DebugWrite(L"SetupTransformPre() mCutFrames: " + lexical_cast<wstring>(mCutFrames));
 
 	// ピッチの拡大縮小率（オク下げ→0.5、オク上げ→2、1 キー上げ→1.059）
@@ -718,13 +793,13 @@ void CEasyKeyChanger::SetupTransform(int oNewKey, int oNewCutTime, int oNewCross
 	//DebugWrite(L"SetupTransform() mScale: " + lexical_cast<wstring>(mScale));
 
 	// シフト長 [Frame] を決める
-	mShiftFrames = static_cast<int>(round(oNewCutTime / 1000.0 * mWaveFormat.nSamplesPerSec / mScale));
+	mShiftFrames = static_cast<int>(round(oNewCutTime / 1000.0 * mWaveFormatOut.nSamplesPerSec / mScale));
 
 	// 一度の変換で mCutFrames 分の音声データを使うので、初期に音声データを追加する位置は mCutFrames 以降とする
 	mSrcAddBasePos = mSrcAddPos = mCutFrames;
 
 	// クロスフェード長 [Frame]
-	int aCrossFrames = static_cast<int>(round(oNewCrossTime / 1000.0 * mWaveFormat.nSamplesPerSec));
+	int aCrossFrames = static_cast<int>(round(oNewCrossTime / 1000.0 * mWaveFormatOut.nSamplesPerSec));
 	DebugWrite(L"SetupTransformCrossTime() aCrossFrames: " + lexical_cast<wstring>(aCrossFrames));
 
 	// クロスフェードバッファ
@@ -914,7 +989,7 @@ HRESULT CEasyKeyChanger::TransformTask(BYTE* oInBuf, BYTE* oOutBuf, long oBufLen
 	int aDoneFrames = 0;
 
 	// サイズ計算
-	int aBlockSize = (mWaveFormat.wBitsPerSample / 8) * mWaveFormat.nChannels;
+	int aBlockSize = (mWaveFormatOut.wBitsPerSample / 8) * mWaveFormatOut.nChannels;
 	int aTotalFrames = oBufLen / aBlockSize;
 	//DebugWrite(L"TransformTask() 総量 aTotalFrames: " + lexical_cast<wstring>(aTotalFrames));
 
@@ -943,8 +1018,8 @@ HRESULT CEasyKeyChanger::TransformTask(BYTE* oInBuf, BYTE* oOutBuf, long oBufLen
 #endif
 
 		// 元の音声データをソースバッファに追加
-		AssertWrite((aDoneFrames + aThisTimeFrames - 1) * aBlockSize + (mWaveFormat.wBitsPerSample / 8) < oBufLen,
-			L"TransformTask() input oInBuf index over: " + lexical_cast<wstring>((aDoneFrames + aThisTimeFrames - 1) * aBlockSize + (mWaveFormat.wBitsPerSample / 8)));
+		AssertWrite((aDoneFrames + aThisTimeFrames - 1) * aBlockSize + (mWaveFormatOut.wBitsPerSample / 8) < oBufLen,
+			L"TransformTask() input oInBuf index over: " + lexical_cast<wstring>((aDoneFrames + aThisTimeFrames - 1) * aBlockSize + (mWaveFormatOut.wBitsPerSample / 8)));
 		AssertWrite(mSrcAddPos + aThisTimeFrames <= static_cast<int>(mSrcL.size()),
 			L"TransformTask() input mSrcL index over: " + lexical_cast<wstring>(mSrcAddPos + aThisTimeFrames));
 		for (int i = 0; i < aThisTimeFrames; i++) {
@@ -953,7 +1028,7 @@ HRESULT CEasyKeyChanger::TransformTask(BYTE* oInBuf, BYTE* oOutBuf, long oBufLen
 			mSrcL[mSrcAddPos + i] = aShort;
 
 			// R
-			CopyMemory(&aShort, oInBuf + (aDoneFrames + i) * aBlockSize + (mWaveFormat.wBitsPerSample / 8), 2);
+			CopyMemory(&aShort, oInBuf + (aDoneFrames + i) * aBlockSize + (mWaveFormatOut.wBitsPerSample / 8), 2);
 			mSrcR[mSrcAddPos + i] = aShort;
 		}
 
@@ -980,8 +1055,8 @@ HRESULT CEasyKeyChanger::TransformTask(BYTE* oInBuf, BYTE* oOutBuf, long oBufLen
 	// 出力
 	AssertWrite(aTotalFrames <= static_cast<int>(mDestL.size()),
 		L"TransformTask() output mDestL index over: " + lexical_cast<wstring>(aTotalFrames));
-	AssertWrite((aTotalFrames - 1) * aBlockSize + (mWaveFormat.wBitsPerSample / 8) < oBufLen,
-		L"TransformTask() output oOutBuf index over: " + lexical_cast<wstring>((aTotalFrames - 1) * aBlockSize + (mWaveFormat.wBitsPerSample / 8)));
+	AssertWrite((aTotalFrames - 1) * aBlockSize + (mWaveFormatOut.wBitsPerSample / 8) < oBufLen,
+		L"TransformTask() output oOutBuf index over: " + lexical_cast<wstring>((aTotalFrames - 1) * aBlockSize + (mWaveFormatOut.wBitsPerSample / 8)));
 	for (int i = 0; i < aTotalFrames; i++) {
 		// L
 		aShort = mDestL[i];
@@ -989,7 +1064,7 @@ HRESULT CEasyKeyChanger::TransformTask(BYTE* oInBuf, BYTE* oOutBuf, long oBufLen
 
 		// R
 		aShort = mDestR[i];
-		CopyMemory(oOutBuf + i * aBlockSize + (mWaveFormat.wBitsPerSample / 8), &aShort, 2);
+		CopyMemory(oOutBuf + i * aBlockSize + (mWaveFormatOut.wBitsPerSample / 8), &aShort, 2);
 	}
 
 #ifdef DEBUGWRITE
