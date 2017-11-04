@@ -26,7 +26,7 @@ const string APP_BIT = "x86 (32bit)";
 #endif
 
 // アプリバージョン
-const string APP_VER = "Ver 1.13";
+const string APP_VER = "Ver 1.14";
 
 // アプリ著作権表記
 const string APP_COPYRIGHT = "Copyright (C) 2017 by SHINTA";

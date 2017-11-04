@@ -83,6 +83,7 @@ private:
 
 	// 返信メッセージテンプレート
 	const string RESPONSE_TEMPLATE_1 = "HTTP/1.0 200 OK\r\n"
+		"Access-Control-Allow-Origin: *\r\n"
 		"Content-Length: ";
 	const string RESPONSE_TEMPLATE_2 = "\r\n"
 		"Content-Type: text/html\r\n"
