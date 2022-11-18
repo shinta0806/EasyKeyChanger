@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>簡易キーチェンジャー　コントローラー</title>
+<link rel="stylesheet" href="HelpParts/SHIHelpG2.css" type="text/css">
+</head>
+
+<body>
+
+<script type="text/javascript">
+<!--
+
+// デバッグ出力するかどうか
+var DEBUG_WRITE = false;
+
+// 簡易キーチェンジャーのキーを示す応答
+var EKC_KEY = "key:";
+
+// HTTP OK
+var HTTP_STATUS_OK = 200;
+
+// XMLHttpRequest.DONE の代替（ActiveXObject 系でも動くように）
+var READY_STATUS_DONE = 4;
+
+// バージョン情報ボタンがクリックされたイベントハンドラー
+function about_clicked() {
+	var request = create_xml_http_request();
+	var url = server_url() + "?help=ver";
+
+	request.open("GET", url, true);
+	request.onreadystatechange = function() { about_ready_state_changed(request) };
+	request.send("");
+}
+
+// 簡易キーチェンジャーからの応答状態が変化したイベントハンドラー
+function about_ready_state_changed(request) {
+	if (request.readyState != READY_STATUS_DONE) {
+		return;
+	}
+
+	var msg = "";
+	if (request.status == HTTP_STATUS_OK) {
+		var pos = request.responseText.indexOf("key is");
+		debug_write("about_ready_state_changed() responseText: " + request.responseText);
+		debug_write("about_ready_state_changed() pos: " + pos);
+		if (pos) {
+			msg = request.responseText.substr(0, pos);
+		} else {
+			msg = request.responseText;
+		}
+		msg = msg.replace(/ /g, "&nbsp;");
+		msg = msg.replace(/\r\n/g, "<br>");
+		debug_write("about_ready_state_changed() msg: " + msg);
+	}
+	if (msg == "") {
+		msg = "バージョン情報を取得できません。<br>" + error_supplement();
+	}
+
+	document.getElementById("AboutEKC").innerHTML = msg;
+}
+
+// 簡易キーチェンジャー用のトークンを作成（Chrome でコマンド多重送信が発生するらしいので）
+function create_token() {
+	var seed = "S";
+
+	seed += (new Date()).getTime() + "; ";
+	seed += window.navigator.userAgent;
+	var token = encodeURIComponent(seed);
+	//debug_write("create_token() token: " + token);
+
+	return token;
+}
+
+// Ajax 用オブジェクトを作成
+function create_xml_http_request() {
+	if (window.XMLHttpRequest) {
+		return new XMLHttpRequest();
+	} else if (window.ActiveXObject) {
+		try {
+			return new ActiveXObject("Msxml2.XMLHTTP");
+		} catch (excep) {
+			try {
+				return new ActiveXObject("Microsoft.XMLHTTP");
+			} catch (excep2) {
+				return null;
+			}
+		}
+	} else {
+		return null;
+	}
+}
+
+// デバッグ出力
+function debug_write(msg) {
+	if (DEBUG_WRITE) {
+		console.log(msg);
+	}
+}
+
+// エラーの補足文章
+function error_supplement() {
+	return "簡易キーチェンジャーが有効になっているか、対応ブラウザを使用しているか、確認して下さい。";
+}
+
+// キー下げボタンがクリックされたイベントハンドラー
+function key_down_clicked() {
+	var key = Number(document.getElementById("KeyRange").value);
+	if (key <= -12) {
+		document.getElementById("KeyState").innerHTML = "キーは -12 までしか下げられません。";
+	} else {
+		document.getElementById("KeyRange").value = key - 1;
+		send_current_key();
+	}
+}
+
+// キースライダーが変更されたイベントハンドラー
+function key_range_changed() {
+	debug_write("key_range_changed() value: " + document.getElementById("KeyRange").value);
+	send_current_key();
+}
+
+// キー上げボタンがクリックされたイベントハンドラー
+function key_up_clicked() {
+	var key = Number(document.getElementById("KeyRange").value);
+	if (key >= 12) {
+		document.getElementById("KeyState").innerHTML = "キーは 12 までしか上げられません。";
+	} else {
+		document.getElementById("KeyRange").value = key + 1;
+		send_current_key();
+	}
+}
+
+// 原曲キーボタンがクリックされたイベントハンドラー
+function origin_clicked() {
+	document.getElementById("KeyRange").value = 0;
+	send_current_key();
+}
+
+// 現在スライダーで設定されているキーを簡易キーチェンジャーに送る
+function send_current_key() {
+	var request = create_xml_http_request();
+	var url = server_url() + "?key=" + document.getElementById("KeyRange").value + "?token=" + create_token();
+
+	request.open("GET", url, true);
+	request.onreadystatechange = function() { send_current_key_ready_state_changed(request) };
+	request.send("");
+}
+
+// 簡易キーチェンジャーからの応答状態が変化したイベントハンドラー
+function send_current_key_ready_state_changed(request) {
+	if (request.readyState != READY_STATUS_DONE) {
+		return;
+	}
+
+	var msg = "";
+	if (request.status == HTTP_STATUS_OK) {
+		var pos = request.responseText.indexOf(EKC_KEY);
+		if (pos) {
+			msg = "現在のキー： ";
+			key = Number(request.responseText.substr(pos + EKC_KEY.length));
+			if (key > 0) {
+				msg += "+" + key;
+			} else {
+				msg += key;
+			}
+		}
+	}
+	if (msg == "") {
+		msg = "キーを変更できません。<br>" + error_supplement();
+	}
+
+	document.getElementById("KeyState").innerHTML = msg;
+}
+
+// 簡易キーチェンジャーのコマンド送付 URL
+function server_url() {
+	return "http://" + document.getElementById("Server").value + ":" + document.getElementById("Port").value
+		+ "/command.html";
+}
+
+// -->
+</script>
+
+<a name="Controller"></a>
+<h1>簡易キーチェンジャー　コントローラー</h1>
+
+<table>
+  <tr>
+    <td class="Layout">
+      <button type="submit" value="KeyDown" onClick="key_down_clicked()">♭</button>
+      <input type="range" id="KeyRange" name="KeyRange" value="0" min="-12" max="12" step="1" onChange="key_range_changed()">
+      <button type="submit" value="KeyUp" onClick="key_up_clicked()">＃</button>
+    </td>
+  </tr>
+  <tr>
+    <td class="Layout">
+      <div id="KeyState" class="Centering">&nbsp;
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td class="Layout">
+      <div class="Centering">
+      <button type="submit" value="Origin" onClick="origin_clicked()">原曲キー</button>
+      </div>
+    </td>
+  </tr>
+</table>
+
+<p>
+&nbsp;
+</p>
+
+<p>
+<button type="submit" value="About" onClick="about_clicked()">簡易キーチェンジャーのバージョン情報</button><br>
+<div id="AboutEKC">&nbsp;</div>
+</p>
+
+<p>
+<a href="EasyKeyChanger_JPN.html" target="_blank">ヘルプ</a><br>
+</p>
+
+
+<a name="Browser"></a>
+<h3>簡易キーチェンジャーコントローラーのブラウザ対応状況</h3>
+
+<table>
+  <tr>
+    <td>
+    ○ 対応ブラウザ
+    </td>
+    <td>
+    Firefox (56)、Chrome (62)
+    </td>
+  </tr>
+  <tr>
+    <td>
+    △ 要注意ブラウザ
+    </td>
+    <td>
+    Internet Explorer (11)<br>
+    （ActiveX コントロールを許可して下さい）
+    </td>
+  </tr>
+  <tr>
+    <td>
+    × 非対応ブラウザ
+    </td>
+    <td>
+    Microsoft Edge (40)<br>
+    （<a href="EasyKeyChanger_JPN.html" target="_blank">ヘルプ</a>を参照し、URL 入力欄にコマンドを入力することで簡易キーチェンジャーを使うことができます）
+    </td>
+  </tr>
+</table>
+
+<a name="Settings"></a>
+<h2>設定</h2>
+
+<p>
+※通常は変更する必要はありません。<br>
+</p>
+
+<table>
+  <tr>
+    <td class="Layout"><div class="RightAlign">サーバー：</div></td>
+    <td class="Layout">http://<input type="text" id="Server" name="Server" value="localhost" size="60"></td>
+  </tr>
+  <tr>
+    <td class="Layout"><div class="RightAlign">ポート：</div></td>
+    <td class="Layout"><input type="text" id="Port" name="Port" value="13580" size="10"></td>
+  </tr>
+</table>
+
+</body>
+</html>

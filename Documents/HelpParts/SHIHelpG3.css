@@ -1,0 +1,341 @@
+@charset "utf-8";
+
+/* ============================================================================
+** SHINTA のヘルプスタイルシート
+============================================================================ */
+
+/* ----------------------------------------------------------------------------
+-- 全体の枠組み（現在、右カラムは使わない設定）
+---------------------------------------------------------------------------- */
+
+body
+{
+	margin: 0 20px 20px 20px;
+	padding: 0px;
+	font-size: 16px;
+	line-height: 140%;
+	background-color: #FFFFFF;
+}
+
+div#MainCol
+{
+	overflow: hidden;
+	position: relative;
+	z-index: 11;
+	min-width: 580px;
+	margin: 0 0 0px 200px;
+	background-color: #FFFFFF;
+}
+
+/* 左カラムは有効幅 200px になるようにする */
+
+div#LCol
+{
+	overflow: hidden;
+	position: fixed;
+	width: 200px;
+	height: 100%;
+	z-index: 12;
+	left: 0;
+	top: 0;
+	border-right: dashed 1px #9999CC;
+	resize: horizontal;
+	background-color: #FFFFFF;
+}
+
+div#LCol:hover
+{
+	overflow-y: scroll;
+}
+
+/* ----------------------------------------------------------------------------
+-- テーブル
+---------------------------------------------------------------------------- */
+
+table
+{
+	border-collapse: collapse;
+	border: none;
+}
+
+th
+{
+	margin: 0;
+	padding: 4px;
+	border: solid 1px #00A8E8;
+	color: #EEEEFF;
+	font-weight: bold;
+	background-color: #00A8E8;
+	background-image: url("THBG.png");
+	background-position: left top;
+	background-repeat: repeat-x;
+}
+
+td
+{
+	padding: 4px;
+	border: solid 1px #00A8E8;
+
+}
+
+td.Layout
+{
+	border: none;
+}
+
+/* ----------------------------------------------------------------------------
+-- リンク
+---------------------------------------------------------------------------- */
+
+a
+{
+	text-decoration: underline;
+}
+
+a:link
+, a:hover
+, a:active
+{
+	color: #0099FF;
+}
+
+a:visited
+{
+	color: #0066BB;
+}
+
+a:link.tb
+, a:hover.tb
+, a:active.tb
+{
+	color: #FFFFFF;
+}
+
+a:visited.tb
+{
+	color: #DDDDFF;
+}
+
+/* ----------------------------------------------------------------------------
+-- Hx
+---------------------------------------------------------------------------- */
+
+h1
+{
+	height: 50px;
+	line-height: 50px;
+	white-space: pre;
+	padding-left: 60px;
+	font-size: 200%;
+	font-weight: normal;
+	color: #003399;
+	background-image: url("H1BG.png");
+	background-position: left top;
+	background-repeat: no-repeat;
+}
+
+h2
+{
+	width: 80%;
+	height: 40px;
+	line-height: 40px;
+	white-space: pre;
+	padding-left: 25px;
+	border-bottom: solid 2px #AAEEEE;
+	font-size: 150%;
+	font-weight: normal;
+	color: #003366;
+	background-image: url("H2BG.png");
+	background-position: left bottom;
+	background-repeat: no-repeat;
+}
+
+h3
+{
+	height: 30px;
+	line-height: 30px;
+	white-space: pre;
+	margin-left: 15px;
+	padding-left: 15px;
+	border-left: solid 15px #6699DD;
+	font-size: 130%;
+	font-weight: bold;
+	color: #114477;
+}
+
+/* ----------------------------------------------------------------------------
+-- 引用
+---------------------------------------------------------------------------- */
+
+blockquote
+{
+	margin: 10px 20px 10px 20px;
+	padding: 10px;
+	background-color: #FFFFCC;
+}
+
+pre
+{
+	background-color: #F0F0FF;
+
+}
+
+/* ----------------------------------------------------------------------------
+-- サイドメニュー関連
+---------------------------------------------------------------------------- */
+
+div.TocItemH1
+{
+	margin: 20px 0px 10px 10px;
+	white-space: pre;
+}
+
+div.TocItemH2
+{
+	margin: 0px 0px 0px 20px;
+	white-space: pre;
+}
+
+div.TocItemH1 a
+{
+	border-radius: 4px 4px 4px 4px;
+	color: #00BB55;
+	font-size: 110%;
+	line-height: 120%;
+	background-color: #F0FFF0;
+	padding: 5px 10px 5px 10px;
+	text-decoration: none;
+}
+
+div.TocItemH2 a
+{
+	color: #00BB55;
+	padding-left: 10px;
+	text-decoration: none;
+}
+
+div.TocItemH1 a:visited
+{
+	padding-left: 10px;
+	color: #006622;
+}
+
+div.TocItemH2 a:visited
+{
+	padding-left: 10px;
+	color: #006622;
+}
+
+div.TocItemH1 a:hover
+, div.TocItemH1 a:active
+{
+	padding-left: 5px;
+	border-left: solid 5px #00EE99;
+	text-decoration: underline;
+}
+
+div.TocItemH2 a:hover
+, div.TocItemH2 a:active
+{
+	padding-left: 5px;
+	border-left: solid 5px #00EE99;
+	text-decoration: underline;
+}
+
+/* ----------------------------------------------------------------------------
+-- ナビゲーション
+---------------------------------------------------------------------------- */
+
+div#PageTopButton
+{
+	width: 60px;
+	height: 60px;
+	line-height: 60px;
+	position: fixed;
+	right: 20px;
+	bottom: 20px;
+	border-radius: 8px 8px 8px 8px;
+	-moz-border-radius: 8px 8px 8px 8px;
+	background-color: #8FBC8F;
+	opacity: 0.7;
+	z-index: 15;
+	cursor: pointer;
+	display: none;
+}
+
+div#PageTopButton:hover
+{
+	background-color: #6B8E23;
+	opacity: 1;
+}
+
+div#PageTopButtonText
+{
+	color: #FFFFFF;
+	text-align: center;
+	font-size: 50px;
+	vertical-align: middle;
+}
+
+/* ----------------------------------------------------------------------------
+-- 表示変更系
+---------------------------------------------------------------------------- */
+
+.Small70
+{
+	font-size: 70%;
+}
+
+.Centering
+{
+	text-align: center;
+}
+
+.RightAlign
+{
+	text-align: right;
+}
+
+.Notice
+{
+	font-weight: bold;
+	color: red;
+}
+
+.Invisi
+{
+	Display				:	None;
+	Visibility			:	Hidden;
+	Font-Size			:	2px;
+}
+
+/* ----------------------------------------------------------------------------
+-- 画像表示系
+---------------------------------------------------------------------------- */
+
+.Size160x30 img
+{
+	width				:	160px;
+	height				:	30px;
+}
+
+.InlineImg
+{
+	padding-left: 5px;
+	padding-right: 5px;
+	vertical-align: middle;
+}
+
+/* ----------------------------------------------------------------------------
+-- その他
+---------------------------------------------------------------------------- */
+
+hr
+{
+	border-width: 1px 0px 0px 0px;
+	border-style: solid;
+	border-color: #999999;
+	height: 1px;
+}
+
+

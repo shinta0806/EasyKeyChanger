@@ -266,3 +266,5 @@ Win32/
 # misc
 *.old*
 *.new*
+desktop.ini
+Thumbs.db

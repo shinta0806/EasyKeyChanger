@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html>
+
+
+
+
+
+
+<head>
+<meta charset="UTF-8">
+<title>簡易キーチェンジャー Ver 1.1 ヘルプ</title>
+<link rel="stylesheet" href="HelpParts/SHIHelpG3.css" type="text/css">
+<script src="HelpParts/jquery.min.js"></script>
+<script src="HelpParts/Scroll.js"></script>
+</head>
+<body>
+
+<!-- 先頭に戻るボタン -->
+<div id="Top"></div>
+<a href="#Top">
+<div id="PageTopButton">
+  <div id="PageTopButtonText">▲</div>
+</div>
+</a>
+
+<!-- ★★★　メインコンテンツ　★★★ -->
+<div id="MainCol">
+
+<h1 id="Hajimeni">はじめに</h1>
+
+<p>
+  <img src="HelpParts/EasyKeyChanger_Icon.png" alt="" width="128" align="right" hspace="10" vspace="10">
+  簡易キーチェンジャーは、再生中の音声のキー（音程）を、リアルタイムで上下させるための DirectShow フィルターです。イメージとしては、カラオケでキーを上げ下げするのと同様のことができます。<br>
+  <br>
+  上下させる量などをブラウザで指定できるのが特徴です。<br>
+  <br>
+  簡易キーチェンジャーは DirectShow フィルターですので、単体では動作しません。DirectShow フィルターを利用できる別のアプリケーション（ホストアプリケーション）と一緒にご利用下さい。<br>
+  <br>
+  本ヘルプではこれ以降、具体例として、<a href="https://ja.osdn.net/projects/sfnet_mpcbe/" target="_blank">Media Player Classic - BE</a> (MPC-BE) をホストアプリケーションとして利用する場合の説明をします。<br>
+  <br>
+  縮小されているスクリーンショットは、クリックすると拡大します。<br>
+</p>
+
+<h1 id="Install">インストール</h1>
+
+<h2 id="MpcBeInstall">MPC-BE のインストール</h2>
+
+<p>
+  最初に、簡易キーチェンジャーを利用するためのホストアプリケーションとして、MPC-BE をインストールします。<br>
+  <br>
+  <a href="https://ja.osdn.net/projects/sfnet_mpcbe/" target="_blank">MPC-BE</a> のサイトから MPC-BE をダウンロードします。お使いの Windows 版が 64 ビット版の場合、MPC-BE は 64 ビット版でも 32 ビット版でもどちらでも構いません。お使いの Windows が 32 ビット版の場合、MPC-BE は 32 ビット版をご利用下さい。どちらの MPC-BE を使えばいいか迷った場合は、32 ビット版を使えば大丈夫です。<br>
+  <br>
+  MPC-BE のダウンロードファイル名に「x64」が含まれているものが 64 ビット版、「x86」が含まれているものが 32 ビット版です。<br>
+  <br>
+  MPC-BE サイトの説明に従って、MPC-BE をインストールします。デフォルトの設定で問題ないと思います。<br>
+</p>
+
+<h2 id="FfdshowInstall">ffdshow のインストール</h2>
+
+<p>
+  簡易キーチェンジャーは、AAC などのエンコードされた音声を直接扱うことができません。予め、別の DirectShow フィルターで音声処理する必要があります。<br>
+  <br>
+  音声処理として、本ヘルプでは ffdshow を利用します。<br>
+  <br>
+  ffdshow は <a href="http://ffdshow-tryout.sourceforge.net/" target="_blank">ffdshow tryouts</a> に含まれています。<br>
+  <br>
+  ffdshow tryouts の<a href="http://ffdshow-tryout.sourceforge.net/download.php" target="_blank">ダウンロードページ</a>から、ffdshow をダウンロードします。MPC-BE が 64 ビット版なら ffdshow も 64 ビット版、MPC-BE が 32 ビット版なら ffdshow も 32 ビット版をダウンロードして下さい。Windows のビット数ではなく、MPC-BE のビット数に合わせて下さい。<br>
+  <br>
+  ffdshow tryouts サイトの説明に従って、ffdshow をインストールします。デフォルトの設定で問題ないと思います。<br>
+</p>
+
+<h2 id="AppInstall">簡易キーチェンジャーのインストール</h2>
+
+<p>
+  簡易キーチェンジャーは、ダウンロードした zip ファイルを好きな場所に解凍するだけで大丈夫です。<br>
+</p>
+
+<h2 id="MpcBeSettings">MPC-BE の設定</h2>
+
+<p>
+  <a href="HelpParts/EasyKeyChanger_MpcBeMenu.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeMenu.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  MPC-BE を起動し、メニューの［表示→オプション］でオプションウィンドウを開きます。<br>
+  <br>
+  メニューバーが表示されていない場合は、MPC-BE のウィンドウを右クリックして表示されるコンテキストメニューから［オプション］を選びます。<br>
+  <br>
+  キーボードの O（オー）を押してもオプションウィンドウが開きます。<br clear="right">
+  <br>
+  <a href="HelpParts/EasyKeyChanger_MpcBeGaibuFilter.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeGaibuFilter.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  オプションウィンドウ左側の「外部フィルター」をクリックすると、右の画面になります。<br clear="right">
+  <br>
+  <a href="HelpParts/EasyKeyChanger_MpcBeFilterSentaku.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFilterSentaku.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  「フィルターの追加」ボタンをクリックすると、右の画面のように、利用可能なフィルターの一覧が出てきますので、「ffdshow Audio Processor」を選択して OK します（名前が似ている ffdshow Audio Decoder ではありませんので注意して下さい）。<br clear="right">
+  <br>
+  <a href="HelpParts/EasyKeyChanger_MpcBeFfdshowYusen.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFfdshowYusen.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  すると、外部フィルターに「ffdshow Audio Processor」が表示されるので、それを選択した状態で右の「優先する」のチェックを入れておきます。<br clear="right">
+  <br>
+  <a href="HelpParts/EasyKeyChanger_MpcBeFfdshowSettings.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFfdshowSettings.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  また、「ffdshow Audio Processor」をダブルクリックすると、ffdshow Audio Processor の設定画面が開きますので、左側のリストから「Output」を選択します。<br>
+  <br>
+  「Output format for uncompressed or decoded streams」の欄が、「16-bit integer」のみチェックされている状態になっているか確認してください（恐らくデフォルトではそうなっているはずです）。もし、「16-bit integer」以外にチェックが入っていたら外して下さい。<br>
+  <br>
+  確認したら、OK ボタンをクリックして ffdshow Audio Processor の設定画面を閉じます。<br clear="right">
+  <br>
+  <a href="HelpParts/EasyKeyChanger_MpcBeFilterHiraku.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFilterHiraku.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  次に、MPC-BE オプションウィンドウの「外部フィルター」で、もう 1 度「フィルターの追加」ボタンをクリックします。利用可能なフィルターの一覧が出てきますが、今度は「参照」ボタンをクリックします。<br>
+  <br>
+  開くウィンドウで、簡易キーチェンジャーを解凍したフォルダのサブフォルダにある EasyKeyChanger.dll を選択します。使用している MPC-BE が 32 ビット版の場合は「32bit」サブフォルダにある EasyKeyChanger.dll、MPC-BE が 64 ビット版の場合は「64bit」サブフォルダにある EasyKeyChanger.dll を選択します。Windows のビット数ではなく、MPC-BE のビット数に合わせて下さい。<br>
+  <br>
+  EasyKeyChanger.dll を選択後、開くボタンをクリックします。<br clear="right">
+  <br>
+  <a href="HelpParts/EasyKeyChanger_MpcBeEasyKeyChangerYusen.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeEasyKeyChangerYusen.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  すると、外部フィルターに「Easy Key Changer x86 (32bit)」（または「Easy Key Changer x64 (64bit)」）が表示されるので、それを選択した状態で右の「優先する」のチェックを入れておきます。<br>
+  <br>
+  必ず、ffdshow Audio Processor の下に 簡易キーチェンジャー が来るようにします。<br clear="right">
+  <br>
+  <a href="HelpParts/EasyKeyChanger_MpcBeDecoderMukou.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeDecoderMukou.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  次に、オプションウィンドウ左側の「内部フィルター」をクリックし、「音声デコーダー」タブを開きます。<br>
+  <br>
+  様々なフィルターがチェックされているリストボックス内で右クリックし、「全てのフィルターを無効化」をクリックします。<br clear="right">
+  <br>
+  <a href="HelpParts/EasyKeyChanger_MpcBeDecoderMukouKanryo.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeDecoderMukouKanryo.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  すべてのチェックが外れます。<br clear="right">
+  <br>
+  <a href="HelpParts/EasyKeyChanger_MpcBeFOnsei.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFOnsei.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  次に、オプションウィンドウ左側の「音声」をクリックします。<br>
+  <br>
+  音声レンダラーを「システムデフォルト」にします。<br>
+  <br>
+  オプションウィンドウの OK ボタンをクリックすれば、設定完了です。<br clear="right">
+</p>
+
+<h2 id="AdditionalAppInstall">追加の MPC-BE の設定（一部環境のみ）</h2>
+
+<p>
+  さきほどまでの設定で、通常は 簡易キーチェンジャー が使えるようになります。しかし、一部の環境では、さらに追加で設定が必要となる場合があるようです。例えば、CPU が Atom 系列のパソコンをお使いの場合、追加設定が必要となる場合が多いようです。<br>
+  <br>
+  次章「<a href="#Tsukaikata">使い方</a>」の通りにしてもうまく動かない場合（音声がプチプチする場合等）は、本節の追加設定を試してみてください。<br>
+  <br>
+  <a href="HelpParts/EasyKeyChanger_MpcBeFfdshowAudioDecoder.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFfdshowAudioDecoder.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  さきほどまでの設定でうまく動かない場合は、MPC-BE で動画や音声を再生中に、メニューの［再生→フィルター］で表示されるフィルターの一覧に「ffdshow Audio Decoder」が表示されているようです。<br>
+  <br>
+  そのような場合は、LAV フィルターをインストールし、追加で MPC-BE の設定を行います。<br clear="right">
+</p>
+
+<h3 id="LavfilternoInstall">LAV フィルターのインストール</h3>
+
+<p>
+  <a href="https://github.com/Nevcairiel/LAVFilters/releases" target="_blank">LAV フィルターのサイト</a>から LAV フィルターをダウンロードします。使用している MPC-BE が 32 ビット版の場合は「x86」の zip ファイル、MPC-BE が 64 ビット版の場合は「x64」の zip ファイルをダウンロードします。Windows のビット数ではなく、MPC-BE のビット数に合わせて下さい。<br>
+  <br>
+  <a href="HelpParts/EasyKeyChanger_LavFilterInstall.png" target="_blank"><img src="HelpParts/EasyKeyChanger_LavFilterInstall.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  ダウンロードした zip ファイルを任意のフォルダーに解凍し、中にある「install_audio.bat」を右クリックして管理者として実行します。「LAVAudio.ax の DllRegisterServer は成功しました。」と表示されればインストール成功です。<br clear="right">
+</p>
+
+<h3 id="MpcBeniLavfilterwoTsuika">MPC-BE に LAV フィルターを追加</h3>
+
+<p>
+  <a href="HelpParts/EasyKeyChanger_MpcBeLavYusen.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeLavYusen.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  MPC-BE を起動し、メニューの［表示→オプション］でオプションウィンドウを開きます。<br>
+  <br>
+  オプションウィンドウ左側の「外部フィルター」をクリックし、「フィルターの追加」ボタンをクリックして、「LAV Audio Decoder」を追加します。<br>
+  <br>
+  「LAV Audio Decoder」が選択された状態で右の「優先する」のチェックを入れておきます。また、「上へ」ボタンをクリックし、「ffdshow Audio Processor」と「Easy Key Changer」の間に「LAV Audio Decoder」が入る順番にします。<br>
+  <br>
+  オプションウィンドウの OK ボタンをクリックすれば、追加設定完了です。<br clear="right">
+</p>
+
+<h1 id="Tsukaikata">使い方</h1>
+
+<h2 id="Controller">コントローラー</h2>
+
+<p>
+  簡易キーチェンジャーを使うには、次の「コントローラー」ページで使うのが簡単です。<br>
+  <br>
+  MPC-BE で音楽やビデオを「再生している間」に、コントローラーページで操作して下さい。<br>
+</p>
+
+<ul>
+  <li><a href="EasyKeyChanger_Controller_JPN.html" target="_blank">簡易キーチェンジャー　コントローラー</a></li>
+</ul>
+
+<p>
+  コントローラーを使わずに、「Web ブラウザー」（Firefox など）の URL 入力欄にコマンドを入れて操作することもできます。<br>
+次節以降で、その方法を説明します。<br>
+</p>
+
+<h2 id="KeyHenkou">キー変更</h2>
+
+<p>
+  <a href="HelpParts/EasyKeyChanger_WebCommand.png" target="_blank"><img src="HelpParts/EasyKeyChanger_WebCommand.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  例えば、キーを 1（半音）上げるには、Web ブラウザーのアドレスバー（URL 入力欄）に、<br>
+  <a href="http://localhost:13580/command.html?key=up" target="_blank">http://localhost:13580/command.html?key=up</a><br>
+  と入力して Enter キーを押します。<br>
+  <br>
+  すると、ブラウザに「key is changed. key: 1」のように表示され、キーが 1 上がります。<br>
+  <br>
+  このように、「http://localhost:13580/command.html?」の後ろにコマンドを入れることで、操作が可能です。<br>
+  <br>
+  キー変更のコマンドは以下です。コマンドは、半角小文字で入れて下さい。<br>
+</p>
+
+<table>
+  <tr>
+    <th>目的</th><th>コマンド</th><th>補足</th>
+  </tr>
+  <tr>
+    <th>キー上げ</th><td>key=up</td><td>キーを 1（半音）上げます。1 オクターブ（12）まで上げられます。<br>例）<a href="http://localhost:13580/command.html?key=up" target="_blank">http://localhost:13580/command.html?key=up</a></td>
+  </tr>
+  <tr>
+    <th>キー下げ</th><td>key=down</td><td>キーを 1（半音）下げます。1 オクターブ（-12）まで下げられます。<br>例）<a href="http://localhost:13580/command.html?key=down" target="_blank">http://localhost:13580/command.html?key=down</a></td>
+  </tr>
+  <tr>
+    <th>キー指定</th><td>key=n（数値）</td><td>上げ下げするキーの量を直接指定します。-12≦n≦12 の範囲で指定できます。0 を指定すると原曲キーに戻ります。<br>例）<a href="http://localhost:13580/command.html?key=-2" target="_blank">http://localhost:13580/command.html?key=-2</a></td>
+  </tr>
+</table>
+
+<p>
+  なお、曲が変わる度に、キー変更設定はリセットされます（原曲キーに戻ります）。<br>
+</p>
+
+<h2 id="SonotaCommand">その他</h2>
+
+<p>
+  キー変更以外のコマンドは以下です。コマンドは、半角小文字で入れて下さい。<br>
+</p>
+
+<table>
+  <tr>
+    <th>目的</th><th>コマンド</th><th>補足</th>
+  </tr>
+  <tr>
+    <th>バージョン情報</th><td>help=ver</td><td>ブラウザにバージョン情報を表示します。<br>例）<a href="http://localhost:13580/command.html?help=ver" target="_blank">http://localhost:13580/command.html?help=ver</a></td>
+  </tr>
+</table>
+
+<h2 id="TokenCommand">連続操作防止</h2>
+
+<p>
+  簡易キーチェンジャーには、誤って同じコマンドを連続してしまうことを防止する機能があります。<br>
+  <br>
+  コマンドを送る際、token コマンドを併用することで、連続操作を防止できます。<br>
+</p>
+
+<table>
+  <tr>
+    <th>目的</th><th>コマンド</th><th>補足</th>
+  </tr>
+  <tr>
+    <th>連続操作防止</th><td>token=s（文字列）</td><td>他のコマンドの後ろに token コマンドを付けた場合、前回の token 文字列と異なる token 文字列の場合のみ、コマンドを受け付けます。<br>例えば、最初に token=a を付加してキー上げした場合、キー上げが行われますが、再度 token=a を付加してキー上げしても、次はキー上げが行われません。次にキー上げをしたい場合は、token=b など、別の token 文字列を付加することにより、再度キー上げが行われます。<br>例）<a href="http://localhost:13580/command.html?key=up&token=a" target="_blank">http://localhost:13580/command.html?key=up&amp;token=a</a></td>
+  </tr>
+</table>
+
+<h2 id="OnseishoriCommand">音声処理パラメーター変更</h2>
+
+<p>
+  キー変更時の音声処理に用いるパラメーターを変更します。通常はこのコマンドは使わないで下さい。不適切な値を設定すると、動作がおかしくなる場合があります。<br>
+</p>
+
+<table>
+  <tr>
+    <th>目的</th><th>コマンド</th><th>補足</th>
+  </tr>
+  <tr>
+    <th>クロスフェード幅変更</th><td>cross=n（数値）</td><td>クロスフェード幅を変更します。単位はミリ秒です。キーが変更されるとデフォルト値に戻ります。<br>例）http://localhost:13580/command.html?cross=10</td>
+  </tr>
+  <tr>
+    <th>切り出し幅変更</th><td>cut=n（数値）</td><td>切り出し幅を変更します。単位はミリ秒です。キーが変更されるとデフォルト値に戻ります。<br>例）http://localhost:13580/command.html?cut=60</td>
+  </tr>
+</table>
+
+<h1 id="Shiyou">仕様</h1>
+
+<p>
+  これまでの説明と重複する事柄もありますが、簡易キーチェンジャーの仕様をここにまとめておきます。<br>
+</p>
+
+<h2 id="Dousakankyo2">動作環境</h2>
+
+<p>
+  簡易キーチェンジャー公式ページの<a href="http://shinta.coresv.com/soft/EasyKeyChanger_JPN.html#Support" target="_blank">サポート情報</a>をご覧ください。<br>
+</p>
+
+<h2 id="Nyuryokuonseikeishiki">入力音声形式</h2>
+
+<p>
+  ffdshow Audio Processor などで処理された後の音声形式が、以下であれば簡易キーチェンジャーでキー変更できます。<br>
+</p>
+
+<table>
+  <tr>
+    <th>形式</th><td>リニア PCM</td>
+  </tr>
+  <tr>
+    <th>サンプリングレート</th><td>任意（44.1 kHz など）</td>
+  </tr>
+  <tr>
+    <th>ビット深度</th><td>16 bit</td>
+  </tr>
+  <tr>
+    <th>チャンネル数</th><td>ステレオ（2ch）</td>
+  </tr>
+</table>
+
+<h1 id="Komattatokiwa">困ったときは</h1>
+
+<p>
+  簡易キーチェンジャーのサポートページをご覧ください。<br>
+</p>
+
+<ul>
+  <li><a href="http://shinta.coresv.com/soft/EasyKeyChanger_JPN.html#Support" target="_blank">簡易キーチェンジャー　サポートページ</a></li>
+</ul>
+
+<h1 id="Sonota">その他</h1>
+
+<h2 id="Database">データベース</h2>
+
+<table>
+  <tr><th>種類別</th><td>フリーソフトウェア</td></tr>
+  <tr><th>名称</th><td>DirectShow フィルター</td></tr>
+  <tr><th>ソフトウェア名</th><td>簡易キーチェンジャー</td></tr>
+  <tr><th>ダウンロード</th><td><a href="http://shinta.coresv.com/soft/EasyKeyChanger_JPN.html#Download" target="_blank">http://shinta.coresv.com/soft/EasyKeyChanger_JPN.html#Download</a>（メイン）<br><a href="http://shinta0806be.ldblog.jp/archives/9212448.html" target="_blank">http://shinta0806be.ldblog.jp/archives/9212448.html</a>（バックアップ）</td></tr>
+  <tr><th>作者</th><td>SHINTA</td></tr>
+  <tr><th>作者 E メール</th><td><img src="HelpParts/MailAddrG2.png" border="0"></td></tr>
+  <tr><th>製品番号</th><td>SHWI-040-A</td></tr>
+</table>
+
+<h2 id="License">ライセンス</h2>
+
+<p>
+  簡易キーチェンジャーには以下のライセンスが適用されます。<br>
+</p>
+
+<ul>
+  <li><a href="http://creativecommons.org/licenses/by-nc-nd/2.1/jp/" target="_blank">クリエイティブ・コモンズ・ライセンス（表示 - 非営利 - 改変禁止 2.1 日本）</a></li>
+</ul>
+
+<p>
+  ※第三者から提供されている部分を除きます。第三者から提供されている部分については、元のライセンスに従います。<br>
+  ※営利目的で使用したい場合は、個別に応じられる場合がありますので事前にご相談下さい。<br>
+</p>
+
+<h2 id="Kaiteirireki">改訂履歴</h2>
+
+<p>
+  簡易キーチェンジャーの改訂履歴は以下をご覧ください。<br>
+</p>
+
+<ul>
+  <li><a href="EasyKeyChanger_History_JPN.txt" target="_blank">EasyKeyChanger_History_JPN.txt</a></li>
+</ul>
+
+</div><!-- MainCol -->
+
+
+<!-- ★★★　左側メニュー　★★★ -->
+<a name="LColMenu"></a>
+<div id="LCol">
+
+<div class="TocArea">
+  <div class="TocItemH1"><a href="#Hajimeni">はじめに</a></div>
+  <div class="TocItemH1"><a href="#Install">インストール</a></div>
+  <div class="TocItemH2"><a href="#MpcBeInstall">MPC-BE のインストール</a></div>
+  <div class="TocItemH2"><a href="#FfdshowInstall">ffdshow のインストール</a></div>
+  <div class="TocItemH2"><a href="#AppInstall">簡易キーチェンジャーのインストール</a></div>
+  <div class="TocItemH2"><a href="#MpcBeSettings">MPC-BE の設定</a></div>
+  <div class="TocItemH2"><a href="#AdditionalAppInstall">追加の MPC-BE の設定（一部環境のみ）</a></div>
+  <div class="TocItemH1"><a href="#Tsukaikata">使い方</a></div>
+  <div class="TocItemH2"><a href="#Controller">コントローラー</a></div>
+  <div class="TocItemH2"><a href="#KeyHenkou">キー変更</a></div>
+  <div class="TocItemH2"><a href="#SonotaCommand">その他</a></div>
+  <div class="TocItemH2"><a href="#TokenCommand">連続操作防止</a></div>
+  <div class="TocItemH2"><a href="#OnseishoriCommand">音声処理パラメーター変更</a></div>
+  <div class="TocItemH1"><a href="#Shiyou">仕様</a></div>
+  <div class="TocItemH2"><a href="#Dousakankyo2">動作環境</a></div>
+  <div class="TocItemH2"><a href="#Nyuryokuonseikeishiki">入力音声形式</a></div>
+  <div class="TocItemH1"><a href="#Komattatokiwa">困ったときは</a></div>
+  <div class="TocItemH1"><a href="#Sonota">その他</a></div>
+  <div class="TocItemH2"><a href="#Database">データベース</a></div>
+  <div class="TocItemH2"><a href="#License">ライセンス</a></div>
+  <div class="TocItemH2"><a href="#Kaiteirireki">改訂履歴</a></div>
+</div>
+
+</div><!-- LCol -->
+
+
+</body>
+
+</html>
