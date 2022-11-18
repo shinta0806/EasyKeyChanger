@@ -55,24 +55,33 @@
   MPC-BE サイトの説明に従って、MPC-BE をインストールします。デフォルトの設定で問題ないと思います。<br>
 </p>
 
-<h2 id="FfdshowInstall">ffdshow のインストール</h2>
+<h2 id="AppInstall">簡易キーチェンジャーのインストール</h2>
+
+<p>
+  簡易キーチェンジャーは、ダウンロードした zip ファイルを好きな場所に解凍するだけで大丈夫です。<br>
+</p>
+
+<h2 id="LavfilternoInstall">LAV フィルターのインストール</h2>
 
 <p>
   簡易キーチェンジャーは、AAC などのエンコードされた音声を直接扱うことができません。予め、別の DirectShow フィルターで音声処理する必要があります。<br>
   <br>
-  音声処理として、本ヘルプでは ffdshow を利用します。<br>
+  音声処理として、本ヘルプでは LAV フィルターと ffdshow を利用します。<br>
   <br>
+  <a href="https://github.com/Nevcairiel/LAVFilters/releases" target="_blank">LAV フィルターのサイト</a>から LAV フィルターをダウンロードします。使用している MPC-BE が 32 ビット版の場合は「x86」の zip ファイル、MPC-BE が 64 ビット版の場合は「x64」の zip ファイルをダウンロードします。Windows のビット数ではなく、MPC-BE のビット数に合わせて下さい。<br>
+  <br>
+  <a href="HelpParts/EasyKeyChanger_LavFilterInstall.png" target="_blank"><img src="HelpParts/EasyKeyChanger_LavFilterInstall.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  ダウンロードした zip ファイルを任意のフォルダーに解凍し、中にある「install_audio.bat」を右クリックして管理者として実行します。「LAVAudio.ax の DllRegisterServer は成功しました。」と表示されればインストール成功です。<br clear="right">
+</p>
+
+<h2 id="FfdshowInstall">ffdshow のインストール</h2>
+
+<p>
   ffdshow は <a href="http://ffdshow-tryout.sourceforge.net/" target="_blank">ffdshow tryouts</a> に含まれています。<br>
   <br>
   ffdshow tryouts の<a href="http://ffdshow-tryout.sourceforge.net/download.php" target="_blank">ダウンロードページ</a>から、ffdshow をダウンロードします。MPC-BE が 64 ビット版なら ffdshow も 64 ビット版、MPC-BE が 32 ビット版なら ffdshow も 32 ビット版をダウンロードして下さい。Windows のビット数ではなく、MPC-BE のビット数に合わせて下さい。<br>
   <br>
   ffdshow tryouts サイトの説明に従って、ffdshow をインストールします。デフォルトの設定で問題ないと思います。<br>
-</p>
-
-<h2 id="AppInstall">簡易キーチェンジャーのインストール</h2>
-
-<p>
-  簡易キーチェンジャーは、ダウンロードした zip ファイルを好きな場所に解凍するだけで大丈夫です。<br>
 </p>
 
 <h2 id="MpcBeSettings">MPC-BE の設定</h2>
@@ -87,32 +96,79 @@
   <br>
   <a href="HelpParts/EasyKeyChanger_MpcBeGaibuFilter.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeGaibuFilter.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
   オプションウィンドウ左側の「外部フィルター」をクリックすると、右の画面になります。<br clear="right">
-  <br>
+</p>
+
+<h3 id="AppTsuika">簡易キーチェンジャーの追加</h3>
+
+<p>
   <a href="HelpParts/EasyKeyChanger_MpcBeFilterSentaku.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFilterSentaku.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
-  「フィルターの追加」ボタンをクリックすると、右の画面のように、利用可能なフィルターの一覧が出てきますので、「ffdshow Audio Processor」を選択して OK します（名前が似ている ffdshow Audio Decoder ではありませんので注意して下さい）。<br clear="right">
-  <br>
-  <a href="HelpParts/EasyKeyChanger_MpcBeFfdshowYusen.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFfdshowYusen.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
-  すると、外部フィルターに「ffdshow Audio Processor」が表示されるので、それを選択した状態で右の「優先する」のチェックを入れておきます。<br clear="right">
-  <br>
-  <a href="HelpParts/EasyKeyChanger_MpcBeFfdshowSettings.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFfdshowSettings.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
-  また、「ffdshow Audio Processor」をダブルクリックすると、ffdshow Audio Processor の設定画面が開きますので、左側のリストから「Output」を選択します。<br>
-  <br>
-  「Output format for uncompressed or decoded streams」の欄が、「16-bit integer」のみチェックされている状態になっているか確認してください（恐らくデフォルトではそうなっているはずです）。もし、「16-bit integer」以外にチェックが入っていたら外して下さい。<br>
-  <br>
-  確認したら、OK ボタンをクリックして ffdshow Audio Processor の設定画面を閉じます。<br clear="right">
+  「フィルターの追加」ボタンをクリックすると、右の画面のように、利用可能なフィルターの一覧が出てきます。<br clear="right">
   <br>
   <a href="HelpParts/EasyKeyChanger_MpcBeFilterHiraku.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFilterHiraku.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
-  次に、MPC-BE オプションウィンドウの「外部フィルター」で、もう 1 度「フィルターの追加」ボタンをクリックします。利用可能なフィルターの一覧が出てきますが、今度は「参照」ボタンをクリックします。<br>
+  「参照」ボタンをクリックします。<br>
   <br>
   開くウィンドウで、簡易キーチェンジャーを解凍したフォルダのサブフォルダにある EasyKeyChanger.dll を選択します。使用している MPC-BE が 32 ビット版の場合は「32bit」サブフォルダにある EasyKeyChanger.dll、MPC-BE が 64 ビット版の場合は「64bit」サブフォルダにある EasyKeyChanger.dll を選択します。Windows のビット数ではなく、MPC-BE のビット数に合わせて下さい。<br>
   <br>
   EasyKeyChanger.dll を選択後、開くボタンをクリックします。<br clear="right">
   <br>
   <a href="HelpParts/EasyKeyChanger_MpcBeEasyKeyChangerYusen.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeEasyKeyChangerYusen.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
-  すると、外部フィルターに「Easy Key Changer x86 (32bit)」（または「Easy Key Changer x64 (64bit)」）が表示されるので、それを選択した状態で右の「優先する」のチェックを入れておきます。<br>
+  すると、外部フィルターに「Easy Key Changer x86 (32bit)」（または「Easy Key Changer x64 (64bit)」）が表示されるので、それを選択した状態で右の「優先する」のチェックを入れておきます。<br clear="right">
+</p>
+
+<h3 id="MpcBeniLavfilterwoTsuika">LAV フィルターの追加</h3>
+
+<p>
+  <a href="HelpParts/EasyKeyChanger_MpcBeLav.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeLav.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  再度「フィルターの追加」ボタンをクリックし、一覧の中から「LAV Audio Decoder」を選択して追加します。<br clear="right">
   <br>
-  必ず、ffdshow Audio Processor の下に 簡易キーチェンジャー が来るようにします。<br clear="right">
+  <a href="HelpParts/EasyKeyChanger_MpcBeLavYusen.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeLavYusen.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  「LAV Audio Decoder」が選択された状態で右の「優先する」のチェックを入れておきます。<br clear="right">
+</p>
+
+<blockquote>
+  （補足）<br>
+  環境によっては、LAV フィルターを追加しなくても簡易キーチェンジャーが動作する場合があります。<br>
+</blockquote>
+
+<h3 id="FfdshowTsuika">ffdshow Audio Processor の追加</h3>
+
+<p>
+  <a href="HelpParts/EasyKeyChanger_MpcBeFfdshowAudioProcessor.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFfdshowAudioProcessor.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  再度「フィルターの追加」ボタンをクリックし、一覧の中から「ffdshow Audio Processor」を選択して追加します。名前が似ている ffdshow Audio Decoder ではありませんので注意して下さい。<br clear="right">
   <br>
+  <a href="HelpParts/EasyKeyChanger_MpcBeFfdshowYusen.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFfdshowYusen.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  「ffdshow Audio Processor」が選択された状態で右の「優先する」のチェックを入れておきます。<br>
+  <br>
+  必ず、<br>
+</p>
+
+<ul>
+  <li>簡易キーチェンジャー</li>
+  <li>LAV フィルター</li>
+  <li>ffdshow Audio Processor</li>
+</ul>
+
+<p>
+  の順番になるようにします。<br clear="right">
+</p>
+
+<blockquote>
+  （補足）<br>
+  使用している MPC-BE のバージョンが古く、Ver 1.6 未満の場合は、順番を逆にします。<br>
+</blockquote>
+
+<p>
+  <a href="HelpParts/EasyKeyChanger_MpcBeFfdshowSettings.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFfdshowSettings.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  また、「ffdshow Audio Processor」をダブルクリックすると、ffdshow Audio Processor の設定画面が開きますので、左側のリストから「Output」を選択します。<br>
+  <br>
+  「Output format for uncompressed or decoded streams」の欄が、「16-bit integer」のみチェックされている状態になっているか確認してください（恐らくデフォルトではそうなっているはずです）。もし、「16-bit integer」以外にチェックが入っていたら外して下さい。<br>
+  <br>
+  確認したら、OK ボタンをクリックして ffdshow Audio Processor の設定画面を閉じます。<br clear="right">
+</p>
+
+<h3 id="NaibufilternoSettei">内部フィルターの設定</h3>
+
+<p>
   <a href="HelpParts/EasyKeyChanger_MpcBeDecoderMukou.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeDecoderMukou.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
   次に、オプションウィンドウ左側の「内部フィルター」をクリックし、「音声デコーダー」タブを開きます。<br>
   <br>
@@ -127,41 +183,6 @@
   音声レンダラーを「システムデフォルト」にします。<br>
   <br>
   オプションウィンドウの OK ボタンをクリックすれば、設定完了です。<br clear="right">
-</p>
-
-<h2 id="AdditionalAppInstall">追加の MPC-BE の設定（一部環境のみ）</h2>
-
-<p>
-  さきほどまでの設定で、通常は 簡易キーチェンジャー が使えるようになります。しかし、一部の環境では、さらに追加で設定が必要となる場合があるようです。例えば、CPU が Atom 系列のパソコンをお使いの場合、追加設定が必要となる場合が多いようです。<br>
-  <br>
-  次章「<a href="#Tsukaikata">使い方</a>」の通りにしてもうまく動かない場合（音声がプチプチする場合等）は、本節の追加設定を試してみてください。<br>
-  <br>
-  <a href="HelpParts/EasyKeyChanger_MpcBeFfdshowAudioDecoder.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFfdshowAudioDecoder.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
-  さきほどまでの設定でうまく動かない場合は、MPC-BE で動画や音声を再生中に、メニューの［再生→フィルター］で表示されるフィルターの一覧に「ffdshow Audio Decoder」が表示されているようです。<br>
-  <br>
-  そのような場合は、LAV フィルターをインストールし、追加で MPC-BE の設定を行います。<br clear="right">
-</p>
-
-<h3 id="LavfilternoInstall">LAV フィルターのインストール</h3>
-
-<p>
-  <a href="https://github.com/Nevcairiel/LAVFilters/releases" target="_blank">LAV フィルターのサイト</a>から LAV フィルターをダウンロードします。使用している MPC-BE が 32 ビット版の場合は「x86」の zip ファイル、MPC-BE が 64 ビット版の場合は「x64」の zip ファイルをダウンロードします。Windows のビット数ではなく、MPC-BE のビット数に合わせて下さい。<br>
-  <br>
-  <a href="HelpParts/EasyKeyChanger_LavFilterInstall.png" target="_blank"><img src="HelpParts/EasyKeyChanger_LavFilterInstall.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
-  ダウンロードした zip ファイルを任意のフォルダーに解凍し、中にある「install_audio.bat」を右クリックして管理者として実行します。「LAVAudio.ax の DllRegisterServer は成功しました。」と表示されればインストール成功です。<br clear="right">
-</p>
-
-<h3 id="MpcBeniLavfilterwoTsuika">MPC-BE に LAV フィルターを追加</h3>
-
-<p>
-  <a href="HelpParts/EasyKeyChanger_MpcBeLavYusen.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeLavYusen.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
-  MPC-BE を起動し、メニューの［表示→オプション］でオプションウィンドウを開きます。<br>
-  <br>
-  オプションウィンドウ左側の「外部フィルター」をクリックし、「フィルターの追加」ボタンをクリックして、「LAV Audio Decoder」を追加します。<br>
-  <br>
-  「LAV Audio Decoder」が選択された状態で右の「優先する」のチェックを入れておきます。また、「上へ」ボタンをクリックし、「ffdshow Audio Processor」と「Easy Key Changer」の間に「LAV Audio Decoder」が入る順番にします。<br>
-  <br>
-  オプションウィンドウの OK ボタンをクリックすれば、追加設定完了です。<br clear="right">
 </p>
 
 <h1 id="Tsukaikata">使い方</h1>
@@ -276,7 +297,7 @@
 <h2 id="Dousakankyo2">動作環境</h2>
 
 <p>
-  簡易キーチェンジャー公式ページの<a href="http://shinta.coresv.com/soft/EasyKeyChanger_JPN.html#Support" target="_blank">サポート情報</a>をご覧ください。<br>
+  簡易キーチェンジャー公式ページの<a href="https://shinta.coresv.com/software/easykeychanger_jpn/#Support" target="_blank">サポート情報</a>をご覧ください。<br>
 </p>
 
 <h2 id="Nyuryokuonseikeishiki">入力音声形式</h2>
@@ -307,8 +328,30 @@
 </p>
 
 <ul>
-  <li><a href="http://shinta.coresv.com/soft/EasyKeyChanger_JPN.html#Support" target="_blank">簡易キーチェンジャー　サポートページ</a></li>
+  <li><a href="https://shinta.coresv.com/software/easykeychanger_jpn/#Support" target="_blank">簡易キーチェンジャー　サポートページ</a></li>
 </ul>
+
+
+<h1 id="Onegai">お願い</h1>
+
+<h2 id="NiconicoUser">ニコニコユーザー</h2>
+
+<p>
+  ニコニコ動画のアカウントを持っている方は、<a href="https://www.nicovideo.jp/user/9520206" target="_blank">SHINTA のアカウント</a>をフォローして頂けると嬉しいです。<br>
+</p>
+
+<h2 id="Fantia">クリエイター支援サイト</h2>
+
+<p>
+  <a href="https://fantia.jp/fanclubs/65509" target="_blank"><img src="HelpParts/CFileMerge2_Fantia.png" alt=""
+      width="256" align="right" border="0" hspace="10" vspace="10"></a>
+  クリエイター支援サイト「Fantia」内に、簡易キーチェンジャーを含む <a href="https://fantia.jp/fanclubs/65509" target="_blank">SHINTA のファンサイトを開設しました</a>。<br>
+  <br>
+  無料プランもありますので、是非ご入会いただけると励みになります。<br>
+  <br>
+  懐に余裕がある方は、有料プランにご入会頂けると、開発費等が助かりますので、よろしくお願いします。<br clear="right">
+</p>
+
 
 <h1 id="Sonota">その他</h1>
 
@@ -318,7 +361,7 @@
   <tr><th>種類別</th><td>フリーソフトウェア</td></tr>
   <tr><th>名称</th><td>DirectShow フィルター</td></tr>
   <tr><th>ソフトウェア名</th><td>簡易キーチェンジャー</td></tr>
-  <tr><th>ダウンロード</th><td><a href="http://shinta.coresv.com/soft/EasyKeyChanger_JPN.html#Download" target="_blank">http://shinta.coresv.com/soft/EasyKeyChanger_JPN.html#Download</a>（メイン）<br><a href="http://shinta0806be.ldblog.jp/archives/9212448.html" target="_blank">http://shinta0806be.ldblog.jp/archives/9212448.html</a>（バックアップ）</td></tr>
+  <tr><th>ダウンロード</th><td><a href="https://shinta.coresv.com/software/easykeychanger_jpn/#Download" target="_blank">https://shinta.coresv.com/software/easykeychanger_jpn/#Download</a>（メイン）<br><a href="http://shinta0806be.ldblog.jp/archives/9212448.html" target="_blank">http://shinta0806be.ldblog.jp/archives/9212448.html</a>（バックアップ）</td></tr>
   <tr><th>作者</th><td>SHINTA</td></tr>
   <tr><th>作者 E メール</th><td><img src="HelpParts/MailAddrG2.png" border="0"></td></tr>
   <tr><th>製品番号</th><td>SHWI-040-A</td></tr>
@@ -360,10 +403,10 @@
   <div class="TocItemH1"><a href="#Hajimeni">はじめに</a></div>
   <div class="TocItemH1"><a href="#Install">インストール</a></div>
   <div class="TocItemH2"><a href="#MpcBeInstall">MPC-BE のインストール</a></div>
-  <div class="TocItemH2"><a href="#FfdshowInstall">ffdshow のインストール</a></div>
   <div class="TocItemH2"><a href="#AppInstall">簡易キーチェンジャーのインストール</a></div>
+  <div class="TocItemH2"><a href="#LavfilternoInstall">LAV フィルターのインストール</a></div>
+  <div class="TocItemH2"><a href="#FfdshowInstall">ffdshow のインストール</a></div>
   <div class="TocItemH2"><a href="#MpcBeSettings">MPC-BE の設定</a></div>
-  <div class="TocItemH2"><a href="#AdditionalAppInstall">追加の MPC-BE の設定（一部環境のみ）</a></div>
   <div class="TocItemH1"><a href="#Tsukaikata">使い方</a></div>
   <div class="TocItemH2"><a href="#Controller">コントローラー</a></div>
   <div class="TocItemH2"><a href="#KeyHenkou">キー変更</a></div>
@@ -374,6 +417,9 @@
   <div class="TocItemH2"><a href="#Dousakankyo2">動作環境</a></div>
   <div class="TocItemH2"><a href="#Nyuryokuonseikeishiki">入力音声形式</a></div>
   <div class="TocItemH1"><a href="#Komattatokiwa">困ったときは</a></div>
+  <div class="TocItemH1"><a href="#Onegai">お願い</a></div>
+  <div class="TocItemH2"><a href="#NiconicoUser">ニコニコユーザー</a></div>
+  <div class="TocItemH2"><a href="#Fantia">クリエイター支援サイト</a></div>
   <div class="TocItemH1"><a href="#Sonota">その他</a></div>
   <div class="TocItemH2"><a href="#Database">データベース</a></div>
   <div class="TocItemH2"><a href="#License">ライセンス</a></div>
