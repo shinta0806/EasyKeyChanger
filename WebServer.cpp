@@ -45,6 +45,7 @@ CWebServer::CWebServer(CEasyKeyChanger* oOwner)
 	mThreadHandle = NULL;
 	mThreadId = 0;
 	mExitRequested = false;
+	mServerSocket = INVALID_SOCKET;
 
 #ifdef DEBUGWRITE
 	mInitialThis = this;
@@ -60,15 +61,20 @@ CWebServer::~CWebServer()
 
 	// スレッド終了を待つ
 	mExitRequested = true;
-	DWORD aExitCode = STILL_ACTIVE;
-	while (aExitCode == STILL_ACTIVE) {
-		Sleep(SLEEP_TIME);
-		GetExitCodeThread(mThreadHandle, &aExitCode);
+	if (mThreadHandle != NULL) {
+		DWORD aExitCode = STILL_ACTIVE;
+		while (aExitCode == STILL_ACTIVE) {
+			Sleep(SLEEP_TIME);
+			GetExitCodeThread(mThreadHandle, &aExitCode);
+		}
+		CloseHandle(mThreadHandle);
 	}
 
 	// ソケット後片付け
-	closesocket(mServerSocket);
-	WSACleanup();
+	if (mServerSocket != INVALID_SOCKET) {
+		closesocket(mServerSocket);
+		WSACleanup();
+	}
 
 	DebugWrite(L"~CWebServer() 終了");
 }
@@ -134,11 +140,15 @@ bool CWebServer::InitServerSocket()
 	mServerSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (mServerSocket == INVALID_SOCKET) {
 		DebugWrite(L"InitServerSocket() err サーバーソケット作成失敗: " + lexical_cast<wstring>(WSAGetLastError()));
+		WSACleanup();
 		return false;
 	}
 
-	BOOL aReuseVal = TRUE;
-	setsockopt(mServerSocket, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&aReuseVal), sizeof(aReuseVal));
+	// ポートの所有者が常に 1 つになるよう、排他的にバインドする
+	// （複数のインスタンスが同時にバインドできてしまうと、どのインスタンスが
+	// 　応答するか不定になるため）
+	BOOL aExclusiveVal = TRUE;
+	setsockopt(mServerSocket, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, reinterpret_cast<const char*>(&aExclusiveVal), sizeof(aExclusiveVal));
 
 	sockaddr_in aAddr;
 	aAddr.sin_family = AF_INET;
@@ -146,6 +156,9 @@ bool CWebServer::InitServerSocket()
 	aAddr.sin_addr.S_un.S_addr = INADDR_ANY;
 	if (::bind(mServerSocket, reinterpret_cast<sockaddr*>(&aAddr), sizeof(aAddr)) != 0) {
 		DebugWrite(L"InitServerSocket() bind err 失敗" + lexical_cast<wstring>(WSAGetLastError()));
+		closesocket(mServerSocket);
+		mServerSocket = INVALID_SOCKET;
+		WSACleanup();
 		return false;
 	}
 
@@ -155,6 +168,9 @@ bool CWebServer::InitServerSocket()
 
 	if (listen(mServerSocket, SOMAXCONN) != 0) {
 		DebugWrite(L"InitServerSocket() listen err 失敗" + lexical_cast<wstring>(WSAGetLastError()));
+		closesocket(mServerSocket);
+		mServerSocket = INVALID_SOCKET;
+		WSACleanup();
 		return false;
 	}
 
@@ -184,6 +200,14 @@ void CWebServer::Response()
 		}
 
 		// 受信
+		// accept したソケットはサーバーソケットのノンブロッキング設定を引き継ぐため、
+		// リクエストが届く前に recv して取りこぼさないよう、ブロッキングに戻したうえで
+		// タイムアウトを設定する
+		unsigned long aNbVal = 0;
+		ioctlsocket(aAcceptSocket, FIONBIO, &aNbVal);
+		DWORD aTimeOut = RECEIVE_TIME_OUT;
+		setsockopt(aAcceptSocket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&aTimeOut), sizeof(aTimeOut));
+
 		char aReceiveBuf[RECEIVE_BUF_LEN];
 		memset(aReceiveBuf, 0, sizeof(aReceiveBuf));
 		int aNumReceives = recv(aAcceptSocket, aReceiveBuf, sizeof(aReceiveBuf), 0);
@@ -261,6 +285,18 @@ void CWebServer::Response()
 				}
 			}
 
+			// 動作状況（応答しているフィルターの状態が分かるようにする）
+			// コントローラーページは "key is" の前までを情報として表示し、"key: " 以降を
+			// キーの数値として解釈するため、これらより前に出力する
+			aResponseBody += "transformable: ";
+			aResponseBody += mOwner->Transformable() ? "yes" : "no";
+			aResponseBody += "\r\n";
+			if (!mOwner->Transformable()) {
+				aResponseBody += "reason: " + WStringToUtf8String(mOwner->NoTransformReason()) + "\r\n";
+			}
+			aResponseBody += "input: " + WStringToUtf8String(mOwner->InputFormatSummary()) + "\r\n";
+			aResponseBody += "instance: pid " + lexical_cast<string>(GetCurrentProcessId()) + "\r\n";
+
 			// キーチェンジ結果のメッセージ
 			if (aKeyChanged) {
 				aResponseBody += "key is changed.";
@@ -302,8 +338,16 @@ DWORD WINAPI CWebServer::ThreadFunc(void* oParam)
 	CWebServer* aWebServer = reinterpret_cast<CWebServer*>(oParam);
 
 	// 準備
-	if (!aWebServer->InitServerSocket()) {
-		return -1;
+	// 他のインスタンスがポートを使用中の場合などは、解放を待って再試行する
+	while (!aWebServer->InitServerSocket()) {
+		for (int i = 0; i < aWebServer->RETRY_WAIT_COUNT; i++) {
+			if (aWebServer->mExitRequested) {
+				DebugWrite(L"ThreadFunc() Exit (init not done)");
+				return 0;
+			}
+			Sleep(aWebServer->SLEEP_TIME);
+		}
+		DebugWrite(L"ThreadFunc() init retry");
 	}
 
 	// クライアントとのやり取り

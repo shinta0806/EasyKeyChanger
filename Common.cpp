@@ -35,6 +35,25 @@ wstring GuidToWString(const GUID* oGuid)
 	return aGuidString;
 }
 
+// ----------------------------------------------------------------------------
+// wstring ‚ð UTF-8 ‚Ì string ‚É•ÏŠ·‚·‚é
+// ----------------------------------------------------------------------------
+string WStringToUtf8String(const wstring& oWString)
+{
+	if (oWString.empty()) {
+		return string();
+	}
+
+	int aNumBytes = WideCharToMultiByte(CP_UTF8, 0, oWString.c_str(), static_cast<int>(oWString.length()), NULL, 0, NULL, NULL);
+	if (aNumBytes <= 0) {
+		return string();
+	}
+
+	string aString(aNumBytes, '\0');
+	WideCharToMultiByte(CP_UTF8, 0, oWString.c_str(), static_cast<int>(oWString.length()), &aString[0], aNumBytes, NULL, NULL);
+	return aString;
+}
+
 
 
 

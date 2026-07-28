@@ -38,6 +38,9 @@ const string APP_COPYRIGHT = "Copyright (C) 2017 by SHINTA";
 // GUID ‚ð•¶Žš—ñ‚É•ÏŠ·‚·‚é
 wstring GuidToWString(const GUID* oGuid);
 
+// wstring ‚ð UTF-8 ‚Ì string ‚É•ÏŠ·‚·‚é
+string WStringToUtf8String(const wstring& oWString);
+
 
 
 
