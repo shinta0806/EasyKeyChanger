@@ -51,11 +51,19 @@ private:
 	// 待機時間 [ms]
 	const int SLEEP_TIME = 20;
 
+	// サーバーソケット初期化失敗時の再試行までの待機回数（SLEEP_TIME × 本回数 ≒ 1 秒）
+	// （音声トラックごとにフィルターのインスタンスが複数作られた場合など、
+	// 　他のインスタンスがポートを使用中の間は解放を待って再試行する）
+	const int RETRY_WAIT_COUNT = 50;
+
 	// ソケットタイムアウト時間 [us]
 	//const int SOCKET_TIME_OUT = 100 * 1000;
 
 	// クライアントからのデータ受信時のバッファサイズ
 	static const int RECEIVE_BUF_LEN = 2048;
+
+	// クライアントからのデータ受信時のタイムアウト時間 [ms]
+	const DWORD RECEIVE_TIME_OUT = 1000;
 
 	// 受信パラメーター名：cross
 	const string PARAM_NAME_CROSS = "cross";
@@ -86,7 +94,7 @@ private:
 		"Access-Control-Allow-Origin: *\r\n"
 		"Content-Length: ";
 	const string RESPONSE_TEMPLATE_2 = "\r\n"
-		"Content-Type: text/html\r\n"
+		"Content-Type: text/html; charset=UTF-8\r\n"
 		"\r\n";
 
 	// ============================================================================

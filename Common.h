@@ -26,10 +26,10 @@ const string APP_BIT = "x86 (32bit)";
 #endif
 
 // アプリバージョン
-const string APP_VER = "Ver 1.14";
+const string APP_VER = "Ver 1.17";
 
 // アプリ著作権表記
-const string APP_COPYRIGHT = "Copyright (C) 2017 by SHINTA";
+const string APP_COPYRIGHT = "Copyright (C) 2017-2026 by SHINTA";
 
 // ============================================================================
 // 共通関数
@@ -37,6 +37,9 @@ const string APP_COPYRIGHT = "Copyright (C) 2017 by SHINTA";
 
 // GUID を文字列に変換する
 wstring GuidToWString(const GUID* oGuid);
+
+// wstring を UTF-8 の string に変換する
+string WStringToUtf8String(const wstring& oWString);
 
 
 

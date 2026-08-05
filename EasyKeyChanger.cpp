@@ -5,8 +5,12 @@
 // ============================================================================
 
 // ----------------------------------------------------------------------------
-// システムに対しては、メジャータイプがオーディオのものはすべて対応として返す
-// 実際には非対応のものは、Transform() でスルーする
+// 入力は非圧縮のリニア PCM 系（整数 16/24/32 ビット・32 ビット Float、
+// 1～8 チャンネル、サンプリングレート任意）のみ受け入れ、すべて変換対象とする
+// 圧縮音声（AAC 等）は接続を拒否することで、デコーダーより上流（スプリッター
+// 直後）に本フィルターが挿入されるのを防ぎ、デコード済み音声を受け取れる位置に
+// 挿入されるようにする（ffdshow Audio Processor と同じ受け入れ方式）
+// 受け入れたが変換対応外のもの（希少形式）は、Transform() でスルーする
 // これにより、非対応時にもユーザーへの応答が可能となる
 // ----------------------------------------------------------------------------
 
@@ -20,6 +24,9 @@
 //   CompleteConnect() ※出力側
 //   DecideBufferSize()
 //   Transform() ※複数回
+// トラック変更時は◆以外の関数は呼ばれないため、トラック変更に伴う
+// フォーマット変更への対応（出力メディアタイプや変換用設定の更新）は
+// CheckTransform() で行う
 // ----------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
@@ -30,6 +37,9 @@
 // ----------------------------------------------------------------------------
 // Unit
 #include "EasyKeyChanger.h"
+// ----------------------------------------------------------------------------
+// Windows
+#include <mmreg.h>
 // ----------------------------------------------------------------------------
 // C++
 #include <cmath>
@@ -60,6 +70,7 @@ CEasyKeyChanger::CEasyKeyChanger(TCHAR* oName, LPUNKNOWN oUnknown, HRESULT* oHRe
 
 	// 初期化
 	mOutputMedia = NULL;
+	mOutputMediaChanged = false;
 	mMaxOutputFrames = 0;
 	mTransformable = false;
 	mKeyShift = 0;
@@ -68,6 +79,9 @@ CEasyKeyChanger::CEasyKeyChanger(TCHAR* oName, LPUNKNOWN oUnknown, HRESULT* oHRe
 	mPrevCutTime = 0;
 	mPrevCrossTime = 0;
 	ZeroMemory(&mWaveFormatOut, sizeof(mWaveFormatOut));
+	mNumChannels = 0;
+	mBytesPerSample = 0;
+	mSampleIsFloat = false;
 	mWebServer = NULL;
 
 	// 変換処理用の初期化
@@ -78,6 +92,7 @@ CEasyKeyChanger::CEasyKeyChanger(TCHAR* oName, LPUNKNOWN oUnknown, HRESULT* oHRe
 	mCutFrames = 0;
 	mShiftFrames = 0;
 	mCrossTime = 0;
+	mCrossFrames = 0;
 
 #ifdef DEBUGWRITE
 	mInitialThis = this;
@@ -127,6 +142,48 @@ HRESULT CEasyKeyChanger::CheckInputType(const CMediaType* oMtIn)
 		return aHResult;
 	}
 
+	// 非圧縮のリニア PCM 系（整数 PCM／IEEE Float）のみ受け入れる
+	// 圧縮音声（AAC 等）まで受け入れると、プレーヤーによってはデコーダーより上流
+	// （スプリッター直後）に本フィルターが挿入され、そのチェーンではキーチェンジが
+	// 不可能になってしまう。拒否すれば、デコーダーが挿入された後の位置
+	// （デコード済み音声を受け取れる位置）で本フィルターの挿入が試みられる
+	// （ffdshow Audio Processor と同じ受け入れ方式）
+
+	// サブタイプの確認
+	// ビッグエンディアンの LPCM（Blu-ray／DVD）等は、WAVEFORMATEX 上は
+	// リニア PCM に見えるがバイト順が異なるため、サブタイプで除外する
+	DebugWrite(L"CheckInputType() sub type: " + GuidToWString(oMtIn->Subtype()));
+	if (*oMtIn->Subtype() != MEDIASUBTYPE_PCM && *oMtIn->Subtype() != MEDIASUBTYPE_IEEE_FLOAT) {
+		DebugWrite(L"CheckInputType() NG: sub type is not linear PCM");
+		return VFW_E_TYPE_NOT_ACCEPTED;
+	}
+
+	if (*oMtIn->FormatType() != FORMAT_WaveFormatEx) {
+		DebugWrite(L"CheckInputType() NG: not WAVEFORMATEX");
+		return VFW_E_TYPE_NOT_ACCEPTED;
+	}
+	if (oMtIn->Format() == NULL || oMtIn->FormatLength() < sizeof(PCMWAVEFORMAT)) {
+		DebugWrite(L"CheckInputType() NG: format info too short");
+		return VFW_E_TYPE_NOT_ACCEPTED;
+	}
+	WORD aFormatTag = reinterpret_cast<WAVEFORMATEX*>(oMtIn->Format())->wFormatTag;
+	if (aFormatTag == WAVE_FORMAT_EXTENSIBLE) {
+		// WAVEFORMATEXTENSIBLE の場合は SubFormat がリニア PCM 系かを確認
+		if (oMtIn->FormatLength() < sizeof(WAVEFORMATEXTENSIBLE)) {
+			DebugWrite(L"CheckInputType() NG: WAVEFORMATEXTENSIBLE info too short");
+			return VFW_E_TYPE_NOT_ACCEPTED;
+		}
+		GUID aSubFormat = reinterpret_cast<WAVEFORMATEXTENSIBLE*>(oMtIn->Format())->SubFormat;
+		if (aSubFormat != MEDIASUBTYPE_PCM && aSubFormat != MEDIASUBTYPE_IEEE_FLOAT) {
+			DebugWrite(L"CheckInputType() NG: sub format is not linear PCM: " + GuidToWString(&aSubFormat));
+			return VFW_E_TYPE_NOT_ACCEPTED;
+		}
+	}
+	else if (aFormatTag != WAVE_FORMAT_PCM && aFormatTag != WAVE_FORMAT_IEEE_FLOAT) {
+		DebugWrite(L"CheckInputType() NG: compressed format tag: " + lexical_cast<wstring>(aFormatTag));
+		return VFW_E_TYPE_NOT_ACCEPTED;
+	}
+
 	DebugWrite(L"CheckInputType() OK");
 	return S_OK;
 }
@@ -141,9 +198,6 @@ HRESULT CEasyKeyChanger::CheckTransform(const CMediaType* oMtIn, const CMediaTyp
 
 	HRESULT aHResult;
 
-	// 変換可能かどうかのフラグを一旦リセット
-	mTransformable = false;
-
 	aHResult = CheckTypeCore(oMtIn);
 	if (FAILED(aHResult)) {
 		return aHResult;
@@ -153,12 +207,33 @@ HRESULT CEasyKeyChanger::CheckTransform(const CMediaType* oMtIn, const CMediaTyp
 		return aHResult;
 	}
 
+	// 以下でメンバー変数を更新するため、ストリーミングスレッドの Transform() と
+	// 競合しないようにロックする（Transform() と同一スレッドから呼ばれた場合は、
+	// 再帰ロックとなるので問題ない）
+	CAutoLock aLock(&m_csReceive);
+
+	// 再生中の音声トラック変更などにより、入力メディアタイプが変更された場合は、
+	// 出力メディアタイプを新しい入力メディアタイプに合わせて作り直す
+	// （トラック変更時は CompleteConnect() や DecideBufferSize() は再度呼ばれないため、ここで対応する）
+	// サンプリングレートのみならず、チャンネル数やビット深度などの変更もすべて検出できるよう、
+	// メディアタイプ全体を比較する
+	bool aFormatChanged = false;
+	if (mOutputMedia != NULL && *oMtIn != mInputMedia) {
+		DebugWriteMediaType(L"CheckTransform() input format changed", oMtIn);
+		SetupOutputMedia(*oMtIn);
+		aFormatChanged = true;
+	}
+
+	// 変換可能かどうかのフラグを一旦リセット
+	mTransformable = false;
+
 	// ここまで到達したものは受け付けるが、実際に変換可能かどうかは別問題
 	// 以下で、変換可能かどうかの確認をする
 	try {
 		// サブタイプの確認
+		// （ビッグエンディアンの LPCM 等を除外する）
 		DebugWrite(L"CheckTransform() sub type: " + GuidToWString(oMtIn->Subtype()));
-		if (*oMtIn->Subtype() != MEDIASUBTYPE_PCM) {
+		if (*oMtIn->Subtype() != MEDIASUBTYPE_PCM && *oMtIn->Subtype() != MEDIASUBTYPE_IEEE_FLOAT) {
 			throw L"音声データがリニア PCM ではありません。";
 		}
 
@@ -167,45 +242,113 @@ HRESULT CEasyKeyChanger::CheckTransform(const CMediaType* oMtIn, const CMediaTyp
 		if (*oMtIn->FormatType() != FORMAT_WaveFormatEx) {
 			throw L"音声データのフォーマットが WAVEFORMATEX ではありません。";
 		}
+		if (oMtIn->Format() == NULL || oMtIn->FormatLength() < sizeof(PCMWAVEFORMAT)) {
+			throw L"音声データのフォーマット情報が不足しています。";
+		}
 
 		// WAVE フォーマットの確認
-		WAVEFORMATEX aWaveFormatIn = *reinterpret_cast<WAVEFORMATEX*>(oMtIn->Format());
+		// 旧形式の PCMWAVEFORMAT（cbSize 無し・16 バイト）の場合もあるため、存在する分のみコピーする
+		WAVEFORMATEX aWaveFormatIn;
+		ZeroMemory(&aWaveFormatIn, sizeof(aWaveFormatIn));
+		CopyMemory(&aWaveFormatIn, oMtIn->Format(),
+				oMtIn->FormatLength() < sizeof(aWaveFormatIn) ? oMtIn->FormatLength() : sizeof(aWaveFormatIn));
 		DebugWrite(L"CheckTransform() a");
-		if (aWaveFormatIn.nChannels != NUM_CHANNEL_2) {
-			throw L"音声データのチャンネル数がステレオではありません。";
+
+		// リニア PCM（整数）か IEEE Float かの確認
+		bool aIsFloat;
+		if (aWaveFormatIn.wFormatTag == WAVE_FORMAT_PCM) {
+			aIsFloat = false;
 		}
-		if (aWaveFormatIn.wBitsPerSample != BITS_PER_SAMPLE_16) {
-			throw L"音声データのビット深度が 16 ではありません。";
+		else if (aWaveFormatIn.wFormatTag == WAVE_FORMAT_IEEE_FLOAT) {
+			aIsFloat = true;
+		}
+		else if (aWaveFormatIn.wFormatTag == WAVE_FORMAT_EXTENSIBLE) {
+			if (oMtIn->FormatLength() < sizeof(WAVEFORMATEXTENSIBLE)) {
+				throw L"音声データのフォーマット情報（WAVEFORMATEXTENSIBLE）が不足しています。";
+			}
+			GUID aSubFormat = reinterpret_cast<WAVEFORMATEXTENSIBLE*>(oMtIn->Format())->SubFormat;
+			if (aSubFormat == MEDIASUBTYPE_PCM) {
+				aIsFloat = false;
+			}
+			else if (aSubFormat == MEDIASUBTYPE_IEEE_FLOAT) {
+				aIsFloat = true;
+			}
+			else {
+				throw L"音声データがリニア PCM ではありません。";
+			}
+		}
+		else {
+			throw L"音声データがリニア PCM ではありません。";
 		}
 
-		// 必要に応じて出力フォーマットの設定を行う
-		// （FLAC のように設定するとうまく動作しないフィルターもあるため、なるべく設定を行わない）
-		bool aNeedSetup = false;
+		// チャンネル数の確認
+		if (aWaveFormatIn.nChannels < 1 || aWaveFormatIn.nChannels > MAX_NUM_CHANNELS) {
+			throw L"音声データのチャンネル数に対応していません。";
+		}
+
+		// ビット深度の確認
+		if (aIsFloat) {
+			if (aWaveFormatIn.wBitsPerSample != 32) {
+				throw L"音声データのビット深度に対応していません（Float は 32 ビットのみ対応）。";
+			}
+		}
+		else {
+			if (aWaveFormatIn.wBitsPerSample != 16 && aWaveFormatIn.wBitsPerSample != 24 && aWaveFormatIn.wBitsPerSample != 32) {
+				throw L"音声データのビット深度に対応していません（整数は 16/24/32 ビットのみ対応）。";
+			}
+		}
+
+		// ブロックアライメントの整合確認（変換時のバッファ位置計算の前提）
+		if (aWaveFormatIn.nBlockAlign != aWaveFormatIn.nChannels * aWaveFormatIn.wBitsPerSample / 8) {
+			throw L"音声データのブロックアライメントが不正です。";
+		}
+
+		// サンプリングレートの確認
+		// （極端に低いレートでは切り出し幅が 0 フレームとなり変換処理が破綻するため）
+		if (aWaveFormatIn.nSamplesPerSec < MIN_SAMPLES_PER_SEC || aWaveFormatIn.nSamplesPerSec > MAX_SAMPLES_PER_SEC) {
+			throw L"音声データのサンプリングレートに対応していません。";
+		}
 
 		// 修正
-		if (FixBadWaveFormat(&aWaveFormatIn)) {
-			aNeedSetup = true;
-		}
+		// （mOutputMedia のフォーマットは SetupOutputMedia() で修正済みのため、
+		// 　ここでは変換処理用の値のみ修正する）
+		FixBadWaveFormat(&aWaveFormatIn);
 
-		if (mWaveFormatOut.nAvgBytesPerSec != 0 && mWaveFormatOut.nAvgBytesPerSec != aWaveFormatIn.nAvgBytesPerSec) {
-			// 再生中の音声トラック変更によりフォーマットが変更された場合
-			aNeedSetup = true;
-		}
-
-		// 出力設定
+		// 変換処理用の情報を設定
 		mWaveFormatOut = aWaveFormatIn;
-		if (aNeedSetup) {
-			mOutputMedia->SetFormat(reinterpret_cast<BYTE*>(&mWaveFormatOut), sizeof(mWaveFormatOut));
-		}
+		mNumChannels = aWaveFormatIn.nChannels;
+		mBytesPerSample = aWaveFormatIn.wBitsPerSample / 8;
+		mSampleIsFloat = aIsFloat;
 
 		// 変換可能
 		mTransformable = true;
 	}
 	catch (const wchar_t* oReason) {
+		CAutoLock aReasonLock(&mOutputMediaLock);
 		mNoTransformReason = oReason;
 	}
 	catch (...) {
+		CAutoLock aReasonLock(&mOutputMediaLock);
 		mNoTransformReason = L"原因は不明です。";
+	}
+
+	// 入力メディアタイプが変更され、かつ変換可能な場合は、変換用の設定も
+	// 新しいフォーマットに合わせて更新する
+	if (aFormatChanged && mTransformable) {
+		if (mMaxOutputFrames == 0) {
+			// 接続当初は変換不能だったが、トラック変更により変換可能となった場合
+			// （DecideBufferSize() は再度呼ばれないため、ここで変換用の準備を行う）
+			mMaxOutputFrames = static_cast<int>(0.5 * mWaveFormatOut.nSamplesPerSec);
+		}
+
+		// 変換用バッファを新しいサンプリングレートに合わせて確保し直す
+		SetupTransformPre();
+
+		// サーバー構築（未構築の場合のみ）
+		if (mWebServer == NULL) {
+			mWebServer = new CWebServer(this);
+			mWebServer->Run();
+		}
 	}
 
 #ifdef DEBUGWRITE
@@ -229,6 +372,23 @@ HRESULT CEasyKeyChanger::CompleteConnect(PIN_DIRECTION oDirection, IPin* oReceiv
 	if (oDirection != PINDIR_INPUT) {
 		DebugWrite(L"CompleteConnect() return: not PINDIR_INPUT");
 		return S_OK;
+	}
+
+	// 上流が本フィルター自身の場合は接続を拒否する
+	// （何でも受け入れる設計のため、グラフ構築時に本フィルターが連鎖して
+	// 　多重挿入されるのを防ぐ。拒否すればグラフビルダーは次の候補
+	// 　（デコーダー等）を試す）
+	if (oReceivePin != NULL) {
+		PIN_INFO aPinInfo;
+		if (SUCCEEDED(oReceivePin->QueryPinInfo(&aPinInfo)) && aPinInfo.pFilter != NULL) {
+			CLSID aUpstreamClsid = GUID_NULL;
+			aPinInfo.pFilter->GetClassID(&aUpstreamClsid);
+			aPinInfo.pFilter->Release();
+			if (aUpstreamClsid == CLSID_EasyKeyChanger) {
+				DebugWrite(L"CompleteConnect() NG: upstream is EasyKeyChanger itself");
+				return VFW_E_TYPE_NOT_ACCEPTED;
+			}
+		}
 	}
 
 	// 出力メディアを設定
@@ -273,7 +433,9 @@ HRESULT CEasyKeyChanger::DecideBufferSize(IMemAllocator* oAlloc, ALLOCATOR_PROPE
 	}
 
 	// サーバー構築
-	if (SUCCEEDED(aHResult)) {
+	// （再生中の音声トラック変更により CheckTransform() で構築済みの場合もあるため、
+	// 　未構築の場合のみ）
+	if (SUCCEEDED(aHResult) && mWebServer == NULL) {
 		mWebServer = new CWebServer(this);
 		mWebServer->Run();
 	}
@@ -308,6 +470,10 @@ HRESULT CEasyKeyChanger::GetMediaType(int oPosition, CMediaType* oMediaType)
 	}
 
 	// 作成済みの出力メディアタイプをそのまま返す
+	// （再生中の音声トラック変更で SetupOutputMedia() が mOutputMedia を更新することが
+	// 　あるため、ロックしてからコピーする。m_csReceive はストリーミングスレッドが
+	// 　長時間保持することがあり、UI スレッドがフリーズするため使用しない）
+	CAutoLock aLock(&mOutputMediaLock);
 	if (mOutputMedia == NULL) {
 		DebugWrite(L"GetMediaType() mOutputMedia NULL");
 		return E_UNEXPECTED;
@@ -463,6 +629,47 @@ bool CEasyKeyChanger::SetKeyShift(int oKeyShift)
 	return true;
 }
 
+// ----------------------------------------------------------------------------
+// 変換可能かどうか
+// ----------------------------------------------------------------------------
+bool CEasyKeyChanger::Transformable() const
+{
+	return mTransformable;
+}
+
+// ----------------------------------------------------------------------------
+// 変換できない理由
+// ----------------------------------------------------------------------------
+wstring CEasyKeyChanger::NoTransformReason()
+{
+	// CheckTransform() による更新と競合しないようにロックする
+	CAutoLock aLock(&mOutputMediaLock);
+
+	return mNoTransformReason;
+}
+
+// ----------------------------------------------------------------------------
+// 現在の入力フォーマットの要約（診断用）
+// ----------------------------------------------------------------------------
+wstring CEasyKeyChanger::InputFormatSummary()
+{
+	// SetupOutputMedia() による更新と競合しないようにロックする
+	CAutoLock aLock(&mOutputMediaLock);
+
+	if (*mInputMedia.FormatType() == FORMAT_WaveFormatEx && mInputMedia.Format() != NULL
+			&& mInputMedia.FormatLength() >= sizeof(PCMWAVEFORMAT)) {
+		WAVEFORMATEX aWaveFormat;
+		ZeroMemory(&aWaveFormat, sizeof(aWaveFormat));
+		CopyMemory(&aWaveFormat, mInputMedia.Format(),
+				mInputMedia.FormatLength() < sizeof(aWaveFormat) ? mInputMedia.FormatLength() : sizeof(aWaveFormat));
+		return lexical_cast<wstring>(aWaveFormat.nChannels) + L"ch "
+				+ lexical_cast<wstring>(aWaveFormat.nSamplesPerSec) + L"Hz "
+				+ lexical_cast<wstring>(aWaveFormat.wBitsPerSample) + L"bit (tag "
+				+ lexical_cast<wstring>(aWaveFormat.wFormatTag) + L")";
+	}
+	return L"subtype " + GuidToWString(mInputMedia.Subtype());
+}
+
 // ============================================================================
 // static 関数
 // ============================================================================
@@ -530,7 +737,13 @@ HRESULT CEasyKeyChanger::CopyHeader(IMediaSample* oIn, IMediaSample* oOut)
 	}
 
 	// メディアタイプ
-	oOut->SetMediaType(mOutputMedia);
+	// 変更があった場合のみ、出力サンプルに添付して下流に伝える
+	// （毎サンプル添付すると、下流のフィルターによってはサンプルごとに
+	// 　再初期化が走り、音声が途切れることがある）
+	if (mOutputMediaChanged) {
+		oOut->SetMediaType(mOutputMedia);
+		mOutputMediaChanged = false;
+	}
 
 	// 連続性情報
 	aHResult = oIn->IsDiscontinuity();
@@ -682,27 +895,19 @@ void CEasyKeyChanger::InitTimeTable()
 // ----------------------------------------------------------------------------
 // 間引きバッファ→最終バッファ
 // ----------------------------------------------------------------------------
-void CEasyKeyChanger::PartialToDest(vector<double>* oPartial, int oDoneFrames, int oThisTimeFrames, vector<int>* oDest)
+void CEasyKeyChanger::PartialToDest(vector<double>* oPartial, int oDoneFrames, int oThisTimeFrames, vector<double>* oDest)
 {
 	AssertWrite((mSrcAddPos - mSrcAddBasePos) + oThisTimeFrames <= static_cast<int>(oPartial->size()),
 		L"PartialToDest() oPartial index over: " + lexical_cast<wstring>((mSrcAddPos - mSrcAddBasePos) + oThisTimeFrames));
 	AssertWrite(oDoneFrames + oThisTimeFrames <= static_cast<int>(oDest->size()),
 		L"PartialToDest() oDest index over: " + lexical_cast<wstring>(oDoneFrames + oThisTimeFrames));
 
+	// クランプはサンプル形式ごとに WriteSampleValue() で行うため、ここではコピーのみ
 	for (int i = 0; i < oThisTimeFrames; i++) {
 		int aPartialIndex = (mSrcAddPos - mSrcAddBasePos) + i;
 		int aDestIndex = oDoneFrames + i;
 
-		if ((*oPartial)[aPartialIndex] > 32767.0) {
-			(*oDest)[aDestIndex] = 32767;
-		}
-		else if ((*oPartial)[aPartialIndex] < -32768.0) {
-			(*oDest)[aDestIndex] = -32768;
-		}
-		else {
-			(*oDest)[aDestIndex] = static_cast<int>((*oPartial)[aPartialIndex]);
-		}
-
+		(*oDest)[aDestIndex] = (*oPartial)[aPartialIndex];
 	}
 
 #ifdef DEBUGWRITEz
@@ -713,6 +918,111 @@ void CEasyKeyChanger::PartialToDest(vector<double>* oPartial, int oDoneFrames, i
 	DebugWrite(L"PartialToDest() : " + aData);
 #endif
 
+}
+
+// ----------------------------------------------------------------------------
+// 入力バッファから 1 サンプルを読み込んで double で返す
+// ----------------------------------------------------------------------------
+double CEasyKeyChanger::ReadSampleValue(const BYTE* oPtr) const
+{
+	if (mSampleIsFloat) {
+		// 32bit Float
+		float aFloat;
+		CopyMemory(&aFloat, oPtr, sizeof(aFloat));
+		return aFloat;
+	}
+
+	switch (mBytesPerSample) {
+	case 2:
+	{
+		// 16bit 整数
+		short aShort;
+		CopyMemory(&aShort, oPtr, 2);
+		return aShort;
+	}
+	case 3:
+	{
+		// 24bit 整数（3 バイト・リトルエンディアン）
+		// 上位 24 ビットに詰めてから算術シフトで符号を維持したまま戻す
+		int aInt = static_cast<int>((static_cast<DWORD>(oPtr[0]) << 8)
+				| (static_cast<DWORD>(oPtr[1]) << 16) | (static_cast<DWORD>(oPtr[2]) << 24));
+		return aInt >> 8;
+	}
+	default:
+	{
+		// 32bit 整数
+		int aInt;
+		CopyMemory(&aInt, oPtr, 4);
+		return aInt;
+	}
+	}
+}
+
+// ----------------------------------------------------------------------------
+// double 値を 1 サンプルとして出力バッファに書き込む
+// 整数形式の場合は形式ごとの範囲にクランプする
+// ----------------------------------------------------------------------------
+void CEasyKeyChanger::WriteSampleValue(BYTE* oPtr, double oValue) const
+{
+	if (mSampleIsFloat) {
+		// 32bit Float
+		float aFloat = static_cast<float>(oValue);
+		CopyMemory(oPtr, &aFloat, sizeof(aFloat));
+		return;
+	}
+
+	switch (mBytesPerSample) {
+	case 2:
+	{
+		// 16bit 整数
+		short aShort;
+		if (oValue > 32767.0) {
+			aShort = 32767;
+		}
+		else if (oValue < -32768.0) {
+			aShort = -32768;
+		}
+		else {
+			aShort = static_cast<short>(oValue);
+		}
+		CopyMemory(oPtr, &aShort, 2);
+		break;
+	}
+	case 3:
+	{
+		// 24bit 整数（3 バイト・リトルエンディアン）
+		int aInt;
+		if (oValue > 8388607.0) {
+			aInt = 8388607;
+		}
+		else if (oValue < -8388608.0) {
+			aInt = -8388608;
+		}
+		else {
+			aInt = static_cast<int>(oValue);
+		}
+		oPtr[0] = static_cast<BYTE>(aInt);
+		oPtr[1] = static_cast<BYTE>(aInt >> 8);
+		oPtr[2] = static_cast<BYTE>(aInt >> 16);
+		break;
+	}
+	default:
+	{
+		// 32bit 整数
+		int aInt;
+		if (oValue > 2147483647.0) {
+			aInt = 2147483647;
+		}
+		else if (oValue < -2147483648.0) {
+			aInt = -2147483647 - 1;
+		}
+		else {
+			aInt = static_cast<int>(oValue);
+		}
+		CopyMemory(oPtr, &aInt, 4);
+		break;
+	}
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -736,7 +1046,16 @@ HRESULT CEasyKeyChanger::SetupOutputBuffer(IMemAllocator* oAlloc, ALLOCATOR_PROP
 		// 0.5 秒分のバッファを確保
 		WAVEFORMATEX* aWaveEx = reinterpret_cast<WAVEFORMATEX*>(mOutputMedia->Format());
 		mMaxOutputFrames = static_cast<int>(0.5 * aWaveEx->nSamplesPerSec);
-		oProperties->cbBuffer = mMaxOutputFrames * aWaveEx->nChannels * aWaveEx->wBitsPerSample / 8;
+
+		// 再生中の音声トラック変更でサンプリングレートが高くなった場合でも
+		// 受け入れられるよう、バッファサイズ自体は対応最大サンプリングレート分を
+		// 確保しておく（トラック変更時は本関数が再度呼ばれず、バッファサイズを
+		// 後から変更できないため）
+		DWORD aBufferSamplesPerSec = aWaveEx->nSamplesPerSec;
+		if (aBufferSamplesPerSec < MAX_SAMPLES_PER_SEC) {
+			aBufferSamplesPerSec = MAX_SAMPLES_PER_SEC;
+		}
+		oProperties->cbBuffer = static_cast<long>(0.5 * aBufferSamplesPerSec) * aWaveEx->nBlockAlign;
 	}
 	else {
 		oProperties->cbBuffer = NO_TRANSFORM_BUF_SIZE;
@@ -768,13 +1087,47 @@ HRESULT CEasyKeyChanger::SetupOutputBuffer(IMemAllocator* oAlloc, ALLOCATOR_PROP
 
 // ----------------------------------------------------------------------------
 // 出力メディアタイプを作成
+// 初回接続時のほか、再生中の音声トラック変更で入力メディアタイプが
+// 変更された場合にも呼ばれる
 // ----------------------------------------------------------------------------
 HRESULT CEasyKeyChanger::SetupOutputMedia(const CMediaType& oMtIn)
 {
-	mOutputMedia = new CMediaType(oMtIn);
+	// GetMediaType() 等の参照と競合しないようにロックする
+	CAutoLock aMediaLock(&mOutputMediaLock);
 
-	// 出力形式変換
-	mOutputMedia->SetSubtype(&MEDIASUBTYPE_PCM);
+	// 現在の入力メディアタイプを記録（再生中の音声トラック変更の検出用）
+	mInputMedia = oMtIn;
+
+	// 出力メディアタイプを入力メディアタイプから作り直す
+	// 再生中に呼ばれた場合、他スレッドが mOutputMedia を参照している可能性があるため、
+	// インスタンスは作り直さず内容のみ更新する
+	if (mOutputMedia == NULL) {
+		mOutputMedia = new CMediaType(oMtIn);
+	}
+	else {
+		*mOutputMedia = oMtIn;
+	}
+
+	// サブタイプは入力のまま維持する
+	// （以前は MEDIASUBTYPE_PCM に書き換えていたが、デコーダーより上流に挿入されて
+	// 　圧縮音声（AAC 等）をパススルーする場合、PCM と誤ったラベルを付けると下流が
+	// 　圧縮データを PCM と誤解して正常に再生されなくなるため、書き換えない。
+	// 　変換対象となるリニア PCM は、入力のサブタイプが元々 MEDIASUBTYPE_PCM である）
+
+	// 不正な音声情報の修正
+	// フォーマットブロック全体（WAVEFORMATEXTENSIBLE の追加情報など）を
+	// 維持したまま修正する
+	if (*mOutputMedia->FormatType() == FORMAT_WaveFormatEx && mOutputMedia->Format() != NULL
+			&& mOutputMedia->FormatLength() >= sizeof(PCMWAVEFORMAT)) {
+		FixBadWaveFormat(reinterpret_cast<WAVEFORMATEX*>(mOutputMedia->Format()));
+	}
+
+	// 次回 Transform() 時に SetupTransform() を再実行させ、
+	// 切り出し幅 [Frame] などを現在のサンプリングレートで再計算させる
+	mPrevCutTime = -1;
+
+	// 次回 Transform() 時に、出力サンプルへメディアタイプを添付させる
+	mOutputMediaChanged = true;
 
 	return S_OK;
 }
@@ -795,16 +1148,27 @@ void CEasyKeyChanger::SetupTransform(int oNewKey, int oNewCutTime, int oNewCross
 	// シフト長 [Frame] を決める
 	mShiftFrames = static_cast<int>(round(oNewCutTime / 1000.0 * mWaveFormatOut.nSamplesPerSec / mScale));
 
+	// 各長さが 0 になると変換処理が進まなくなるため、最低 1 フレームは確保する
+	if (mCutFrames < 1) {
+		mCutFrames = 1;
+	}
+	if (mShiftFrames < 1) {
+		mShiftFrames = 1;
+	}
+
 	// 一度の変換で mCutFrames 分の音声データを使うので、初期に音声データを追加する位置は mCutFrames 以降とする
 	mSrcAddBasePos = mSrcAddPos = mCutFrames;
 
 	// クロスフェード長 [Frame]
 	int aCrossFrames = static_cast<int>(round(oNewCrossTime / 1000.0 * mWaveFormatOut.nSamplesPerSec));
 	DebugWrite(L"SetupTransformCrossTime() aCrossFrames: " + lexical_cast<wstring>(aCrossFrames));
+	mCrossFrames = aCrossFrames;
 
-	// クロスフェードバッファ
-	mCrossL.resize(aCrossFrames);
-	mCrossR.resize(aCrossFrames);
+	// クロスフェードバッファ（チャンネルごと）
+	mCross.resize(mNumChannels);
+	for (int ch = 0; ch < mNumChannels; ch++) {
+		mCross[ch].assign(aCrossFrames, 0.0);
+	}
 
 	// クロスフェード用窓関数の設定
 	mWin.resize(aCrossFrames * 2);
@@ -845,21 +1209,33 @@ void CEasyKeyChanger::SetupTransformPre()
 	// 受信量が mMaxOutputFrames だった場合、その 2 個分を確保しておけば、
 	// なんとなく足りるのではないか、程度の根拠
 	int aSrcLen = mMaxOutputFrames * 2;
+
+	// 再生中の音声トラック変更でサンプリングレートが高くなった場合でも、
+	// 1 回の変換に必要な最大長（切り出し幅＋シフト幅＋クロスフェード幅の最大値）を
+	// 確保できるようにする
+	// シフト幅は最大で切り出し幅の 2 倍（キー -12 の時）なので、切り出し幅の 3 倍を見込む
+	int aNeedLen = static_cast<int>(round((CUT_TIME_MAX * 3 + CROSS_TIME_MAX) / 1000.0 * mWaveFormatOut.nSamplesPerSec)) + 1;
+	if (aSrcLen < aNeedLen) {
+		aSrcLen = aNeedLen;
+	}
 	DebugWrite(L"SetupTransformPre() aSrcLen: " + lexical_cast<wstring>(aSrcLen));
-	mSrcL.resize(aSrcLen);
-	mSrcR.resize(aSrcLen);
 
 	// 伸張後のデータを格納するバッファ
 	// ピッチが 2 倍の時、ソースの 2 倍の長さが必要になるのが最大値
 	int aStrechLen = aSrcLen * 2;
 	DebugWrite(L"SetupTransformPre() aStrechLen: " + lexical_cast<wstring>(aStrechLen));
-	mStrechL.resize(aStrechLen);
-	mStrechR.resize(aStrechLen);
 
-	// 間引き後のデータを格納するバッファ
-	// ソースと同じ長さが最大値
-	mPartialL.resize(aSrcLen);
-	mPartialR.resize(aSrcLen);
+	// チャンネルごとにバッファを確保
+	// （間引き後のデータを格納するバッファは、ソースと同じ長さが最大値）
+	mSrc.resize(mNumChannels);
+	mStrech.resize(mNumChannels);
+	mPartial.resize(mNumChannels);
+	mDest.resize(mNumChannels);
+	for (int ch = 0; ch < mNumChannels; ch++) {
+		mSrc[ch].assign(aSrcLen, 0.0);
+		mStrech[ch].assign(aStrechLen, 0.0);
+		mPartial[ch].assign(aSrcLen, 0.0);
+	}
 
 }
 
@@ -874,38 +1250,38 @@ void CEasyKeyChanger::ShiftSrc()
 	DebugWrite(L"ShiftSrc() mShiftFrames: " + lexical_cast<wstring>(mShiftFrames));
 	DebugWrite(L"ShiftSrc() mShiftFrames * 2 (len): " + lexical_cast<wstring>(mShiftFrames * 2));
 	DebugWrite(L"ShiftSrc() last: " + lexical_cast<wstring>(mSrcAddBasePos + mShiftFrames * 2));
-	DebugWrite(L"ShiftSrc() mShiftFrames + mCutFrames + static_cast<int>(mCrossL.size()): " + lexical_cast<wstring>(mShiftFrames + mCutFrames + static_cast<int>(mCrossL.size())));
+	DebugWrite(L"ShiftSrc() mShiftFrames + mCutFrames + mCrossFrames: " + lexical_cast<wstring>(mShiftFrames + mCutFrames + mCrossFrames));
 #endif
 
 	// 末尾クロスフェードの保存
-	AssertWrite(mCutFrames + static_cast<int>(mCrossL.size()) <= static_cast<int>(mSrcL.size()),
-		L"SrcToStrech() tail cross oSrc index over: " + lexical_cast<wstring>(mCutFrames + static_cast<int>(mCrossL.size())));
-	AssertWrite(static_cast<int>(mCrossL.size() + mCrossL.size()) <= static_cast<int>(mWin.size()),
-		L"SrcToStrech() tail cross mWin index over: " + lexical_cast<wstring>(static_cast<int>(mCrossL.size() + mCrossL.size())));
-	for (int i = 0; i < static_cast<int>(mCrossL.size()); i++) {
-		mCrossL[i] = mSrcL[mCutFrames + i] * mWin[static_cast<int>(mCrossL.size()) + i];
-		mCrossR[i] = mSrcR[mCutFrames + i] * mWin[static_cast<int>(mCrossL.size()) + i];
+	AssertWrite(mCutFrames + mCrossFrames <= static_cast<int>(mSrc[0].size()),
+		L"SrcToStrech() tail cross oSrc index over: " + lexical_cast<wstring>(mCutFrames + mCrossFrames));
+	AssertWrite(mCrossFrames + mCrossFrames <= static_cast<int>(mWin.size()),
+		L"SrcToStrech() tail cross mWin index over: " + lexical_cast<wstring>(mCrossFrames + mCrossFrames));
+	for (int ch = 0; ch < mNumChannels; ch++) {
+		for (int i = 0; i < mCrossFrames; i++) {
+			mCross[ch][i] = mSrc[ch][mCutFrames + i] * mWin[mCrossFrames + i];
+		}
 	}
 
 	// シフト
-	for (int i = 0; i < mCutFrames; i++) {
-		mSrcL[i] = mSrcL[i + mShiftFrames];
-		mSrcR[i] = mSrcR[i + mShiftFrames];
+	for (int ch = 0; ch < mNumChannels; ch++) {
+		for (int i = 0; i < mCutFrames; i++) {
+			mSrc[ch][i] = mSrc[ch][i + mShiftFrames];
+		}
 	}
 	mSrcAddPos = mSrcAddBasePos;
 
-	// 伸張
-	SrcToStrech(&mSrcL, &mStrechL, &mCrossL);
-	SrcToStrech(&mSrcR, &mStrechR, &mCrossR);
-
-	// 間引き
-	StrechToPartial(&mStrechL, &mPartialL);
-	StrechToPartial(&mStrechR, &mPartialR);
+	// 伸張・間引き
+	for (int ch = 0; ch < mNumChannels; ch++) {
+		SrcToStrech(&mSrc[ch], &mStrech[ch], &mCross[ch]);
+		StrechToPartial(&mStrech[ch], &mPartial[ch]);
+	}
 
 #ifdef DEBUGWRITEz
 	wstring src0;
-	for (int i = 0; i < mShiftFrames + mCutFrames + static_cast<int>(mCrossL.size()); i++) {
-		src0 += lexical_cast<wstring>(mSrcL[i]) + L",";
+	for (int i = 0; i < mShiftFrames + mCutFrames + mCrossFrames; i++) {
+		src0 += lexical_cast<wstring>(mSrc[0][i]) + L",";
 	}
 	DebugWrite(L"ShiftSrc() src0: " + src0);
 #endif
@@ -916,7 +1292,7 @@ void CEasyKeyChanger::ShiftSrc()
 // ソースバッファ→伸張バッファへコピー
 // 常に mCutFrames＋クロスフェード分コピーする
 // ----------------------------------------------------------------------------
-void CEasyKeyChanger::SrcToStrech(vector<int>* oSrc, vector<double>* oStrech, vector<double>* oCross)
+void CEasyKeyChanger::SrcToStrech(vector<double>* oSrc, vector<double>* oStrech, vector<double>* oCross)
 {
 	// 先頭クロスフェード（末尾クロスフェードとの合成）
 	AssertWrite(oCross->size() <= oStrech->size(),
@@ -955,14 +1331,15 @@ void CEasyKeyChanger::StrechToPartial(vector<double>* oStrech, vector<double>* o
 }
 
 // ----------------------------------------------------------------------------
-// 1 切り出し幅分（未満のこともある）を変換して mDestL, mDestR に格納する
+// 1 切り出し幅分（未満のこともある）を変換して mDest に格納する
 // 必要な部分のみデスティネーションにコピー
 // ----------------------------------------------------------------------------
 HRESULT CEasyKeyChanger::TransformOneCut(int oDoneFrames, int oThisTimeFrames)
 {
-	// 最終バッファへ
-	PartialToDest(&mPartialL, oDoneFrames, oThisTimeFrames, &mDestL);
-	PartialToDest(&mPartialR, oDoneFrames, oThisTimeFrames, &mDestR);
+	// 最終バッファへ（チャンネルごと）
+	for (int ch = 0; ch < mNumChannels; ch++) {
+		PartialToDest(&mPartial[ch], oDoneFrames, oThisTimeFrames, &mDest[ch]);
+	}
 
 	return S_OK;
 }
@@ -989,14 +1366,14 @@ HRESULT CEasyKeyChanger::TransformTask(BYTE* oInBuf, BYTE* oOutBuf, long oBufLen
 	int aDoneFrames = 0;
 
 	// サイズ計算
-	int aBlockSize = (mWaveFormatOut.wBitsPerSample / 8) * mWaveFormatOut.nChannels;
+	int aBlockSize = mBytesPerSample * mNumChannels;
 	int aTotalFrames = oBufLen / aBlockSize;
 	//DebugWrite(L"TransformTask() 総量 aTotalFrames: " + lexical_cast<wstring>(aTotalFrames));
 
 	// バッファ
-	mDestL.resize(aTotalFrames);
-	mDestR.resize(aTotalFrames);
-	short aShort;
+	for (int ch = 0; ch < mNumChannels; ch++) {
+		mDest[ch].resize(aTotalFrames);
+	}
 
 	// 元の音声データをソースバッファに追加しながら、都度変換
 	// mSrcAddBasePos から追加するのが通例だが、途中から追加、というのもあり得る
@@ -1010,6 +1387,12 @@ HRESULT CEasyKeyChanger::TransformTask(BYTE* oInBuf, BYTE* oOutBuf, long oBufLen
 		else {
 			aThisTimeFrames = aTotalFrames - aDoneFrames;
 		}
+
+		// 万一処理が進まない状況になった場合は、無限ループを避けるため中断する
+		if (aThisTimeFrames <= 0) {
+			AssertWrite(false, L"TransformTask() no progress: mShiftFrames: " + lexical_cast<wstring>(mShiftFrames));
+			return E_FAIL;
+		}
 #if 0
 		DebugWrite(L"TransformTask() aDoneFrames: " + lexical_cast<wstring>(aDoneFrames));
 		DebugWrite(L"TransformTask() aTotalFrames: " + lexical_cast<wstring>(aTotalFrames));
@@ -1018,24 +1401,21 @@ HRESULT CEasyKeyChanger::TransformTask(BYTE* oInBuf, BYTE* oOutBuf, long oBufLen
 #endif
 
 		// 元の音声データをソースバッファに追加
-		AssertWrite((aDoneFrames + aThisTimeFrames - 1) * aBlockSize + (mWaveFormatOut.wBitsPerSample / 8) < oBufLen,
-			L"TransformTask() input oInBuf index over: " + lexical_cast<wstring>((aDoneFrames + aThisTimeFrames - 1) * aBlockSize + (mWaveFormatOut.wBitsPerSample / 8)));
-		AssertWrite(mSrcAddPos + aThisTimeFrames <= static_cast<int>(mSrcL.size()),
-			L"TransformTask() input mSrcL index over: " + lexical_cast<wstring>(mSrcAddPos + aThisTimeFrames));
+		AssertWrite((aDoneFrames + aThisTimeFrames - 1) * aBlockSize + mBytesPerSample < oBufLen,
+			L"TransformTask() input oInBuf index over: " + lexical_cast<wstring>((aDoneFrames + aThisTimeFrames - 1) * aBlockSize + mBytesPerSample));
+		AssertWrite(mSrcAddPos + aThisTimeFrames <= static_cast<int>(mSrc[0].size()),
+			L"TransformTask() input mSrc index over: " + lexical_cast<wstring>(mSrcAddPos + aThisTimeFrames));
 		for (int i = 0; i < aThisTimeFrames; i++) {
-			// L
-			CopyMemory(&aShort, oInBuf + (aDoneFrames + i) * aBlockSize, 2);
-			mSrcL[mSrcAddPos + i] = aShort;
-
-			// R
-			CopyMemory(&aShort, oInBuf + (aDoneFrames + i) * aBlockSize + (mWaveFormatOut.wBitsPerSample / 8), 2);
-			mSrcR[mSrcAddPos + i] = aShort;
+			const BYTE* aFrame = oInBuf + (aDoneFrames + i) * aBlockSize;
+			for (int ch = 0; ch < mNumChannels; ch++) {
+				mSrc[ch][mSrcAddPos + i] = ReadSampleValue(aFrame + ch * mBytesPerSample);
+			}
 		}
 
 #ifdef DEBUGWRITEz
 		wstring src0;
-		for (int i = 0; i < mShiftFrames + mCutFrames + static_cast<int>(mCrossL.size()); i++) {
-			src0 += lexical_cast<wstring>(mSrcL[i]) + L",";
+		for (int i = 0; i < mShiftFrames + mCutFrames + mCrossFrames; i++) {
+			src0 += lexical_cast<wstring>(mSrc[0][i]) + L",";
 		}
 		DebugWrite(L"TransformTask() src0: " + src0);
 #endif
@@ -1053,18 +1433,15 @@ HRESULT CEasyKeyChanger::TransformTask(BYTE* oInBuf, BYTE* oOutBuf, long oBufLen
 	}
 
 	// 出力
-	AssertWrite(aTotalFrames <= static_cast<int>(mDestL.size()),
-		L"TransformTask() output mDestL index over: " + lexical_cast<wstring>(aTotalFrames));
-	AssertWrite((aTotalFrames - 1) * aBlockSize + (mWaveFormatOut.wBitsPerSample / 8) < oBufLen,
-		L"TransformTask() output oOutBuf index over: " + lexical_cast<wstring>((aTotalFrames - 1) * aBlockSize + (mWaveFormatOut.wBitsPerSample / 8)));
+	AssertWrite(aTotalFrames <= static_cast<int>(mDest[0].size()),
+		L"TransformTask() output mDest index over: " + lexical_cast<wstring>(aTotalFrames));
+	AssertWrite((aTotalFrames - 1) * aBlockSize + mBytesPerSample < oBufLen,
+		L"TransformTask() output oOutBuf index over: " + lexical_cast<wstring>((aTotalFrames - 1) * aBlockSize + mBytesPerSample));
 	for (int i = 0; i < aTotalFrames; i++) {
-		// L
-		aShort = mDestL[i];
-		CopyMemory(oOutBuf + i * aBlockSize, &aShort, 2);
-
-		// R
-		aShort = mDestR[i];
-		CopyMemory(oOutBuf + i * aBlockSize + (mWaveFormatOut.wBitsPerSample / 8), &aShort, 2);
+		BYTE* aFrame = oOutBuf + i * aBlockSize;
+		for (int ch = 0; ch < mNumChannels; ch++) {
+			WriteSampleValue(aFrame + ch * mBytesPerSample, mDest[ch][i]);
+		}
 	}
 
 #ifdef DEBUGWRITE
