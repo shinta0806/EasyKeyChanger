@@ -54,22 +54,6 @@ using namespace std;
 // ----------------------------------------------------------------------------
 
 // ============================================================================
-// static 変数（全インスタンス共有）
-// ============================================================================
-
-// キーシフト量
-volatile int CEasyKeyChanger::smKeyShift = 0;
-
-// 切り出し幅・クロスフェード幅をテーブル値で設定した時のキーシフト量
-volatile int CEasyKeyChanger::smPrevTableKeyShift = 0;
-
-// 切り出し幅設定 [ms]
-volatile int CEasyKeyChanger::smCutTime = 0;
-
-// クロスフェード幅設定 [ms]
-volatile int CEasyKeyChanger::smCrossTime = 0;
-
-// ============================================================================
 // コンストラクター・デストラクター
 // ============================================================================
 
@@ -85,11 +69,11 @@ CEasyKeyChanger::CEasyKeyChanger(TCHAR* oName, LPUNKNOWN oUnknown, HRESULT* oHRe
 #endif
 
 	// 初期化
-	// （smKeyShift などの共有変数は、他のインスタンスが使用中の可能性があるため初期化しない）
 	mOutputMedia = NULL;
 	mOutputMediaChanged = false;
 	mMaxOutputFrames = 0;
 	mTransformable = false;
+	mKeyShift = 0;
 	InitTimeTable();
 	mPrevKeyShift = 0;
 	mPrevCutTime = 0;
@@ -104,8 +88,10 @@ CEasyKeyChanger::CEasyKeyChanger(TCHAR* oName, LPUNKNOWN oUnknown, HRESULT* oHRe
 	mSrcAddBasePos = 0;
 	mSrcAddPos = 0;
 	mScale = 1.0;
+	mCutTime = 0;
 	mCutFrames = 0;
 	mShiftFrames = 0;
+	mCrossTime = 0;
 	mCrossFrames = 0;
 
 #ifdef DEBUGWRITE
@@ -545,22 +531,19 @@ HRESULT CEasyKeyChanger::Transform(IMediaSample* oIn, IMediaSample *oOut)
 	// 中身変換
 	if (SUCCEEDED(aHResult)) {
 		// CWebServer スレッドによって書き換えられる可能性があるものは、今回変換用の値をキャッシュしておく
-		int aCachedKeyShift = smKeyShift;
+		int aCachedKeyShift = mKeyShift;
 
 		// 変換
 		if (mTransformable && (aCachedKeyShift != 0)) {
 			// キーが変わった場合は、切り出し幅などを再設定
-			// （音声トラックごとにインスタンスが作られる場合、後から変換を始めた
-			// 　インスタンスが設定を巻き戻さないよう、キーの変化も共有して判定する）
-			if (aCachedKeyShift != smPrevTableKeyShift) {
-				smPrevTableKeyShift = aCachedKeyShift;
-				smCutTime = aCachedKeyShift > 0 ? mCutTimeTableUp[aCachedKeyShift] : mCutTimeTableDown[-aCachedKeyShift];
-				smCrossTime = aCachedKeyShift > 0 ? mCrossTimeTableUp[aCachedKeyShift] : mCrossTimeTableDown[-aCachedKeyShift];
+			if (aCachedKeyShift != mPrevKeyShift) {
+				mCutTime = aCachedKeyShift > 0 ? mCutTimeTableUp[aCachedKeyShift] : mCutTimeTableDown[-aCachedKeyShift];
+				mCrossTime = aCachedKeyShift > 0 ? mCrossTimeTableUp[aCachedKeyShift] : mCrossTimeTableDown[-aCachedKeyShift];
 			}
 
-			// 厳密には、再設定中に CWebServer スレッドによって smCutTime が変更されるのを防ぐべきであるが、面倒くさいので無視
-			int aCachedCutTime = smCutTime;
-			int aCachedCrossTime = smCrossTime;
+			// 厳密には、再設定中に CWebServer スレッドによって mCutTime が変更されるのを防ぐべきであるが、面倒くさいので無視
+			int aCachedCutTime = mCutTime;
+			int aCachedCrossTime = mCrossTime;
 			if (aCachedKeyShift != mPrevKeyShift || aCachedCutTime != mPrevCutTime || aCachedCrossTime != mPrevCrossTime) {
 				SetupTransform(aCachedKeyShift, aCachedCutTime, aCachedCrossTime);
 			}
@@ -582,7 +565,7 @@ HRESULT CEasyKeyChanger::Transform(IMediaSample* oIn, IMediaSample *oOut)
 // ============================================================================
 
 // ----------------------------------------------------------------------------
-// smCrossTime 書き込み
+// mCrossTime 書き込み
 // ----------------------------------------------------------------------------
 bool CEasyKeyChanger::SetCrossTime(int oCrossTime)
 {
@@ -592,16 +575,16 @@ bool CEasyKeyChanger::SetCrossTime(int oCrossTime)
 	if (oCrossTime > CROSS_TIME_MAX) {
 		return false;
 	}
-	if (oCrossTime == smCrossTime) {
+	if (oCrossTime == mCrossTime) {
 		return false;
 	}
 
-	smCrossTime = oCrossTime;
+	mCrossTime = oCrossTime;
 	return true;
 }
 
 // ----------------------------------------------------------------------------
-// smCutTime 書き込み
+// mCutTime 書き込み
 // ----------------------------------------------------------------------------
 bool CEasyKeyChanger::SetCutTime(int oCutTime)
 {
@@ -611,24 +594,24 @@ bool CEasyKeyChanger::SetCutTime(int oCutTime)
 	if (oCutTime > CUT_TIME_MAX) {
 		return false;
 	}
-	if (oCutTime == smCutTime) {
+	if (oCutTime == mCutTime) {
 		return false;
 	}
 
-	smCutTime = oCutTime;
+	mCutTime = oCutTime;
 	return true;
 }
 
 // ----------------------------------------------------------------------------
-// smKeyShift 読み出し
+// mKeyShift 読み出し
 // ----------------------------------------------------------------------------
 int CEasyKeyChanger::KeyShift() const
 {
-	return smKeyShift;
+	return mKeyShift;
 }
 
 // ----------------------------------------------------------------------------
-// smKeyShift 書き込み
+// mKeyShift 書き込み
 // ----------------------------------------------------------------------------
 bool CEasyKeyChanger::SetKeyShift(int oKeyShift)
 {
@@ -638,11 +621,11 @@ bool CEasyKeyChanger::SetKeyShift(int oKeyShift)
 	if (oKeyShift > KEY_SHIFT_MAX) {
 		return false;
 	}
-	if (oKeyShift == smKeyShift) {
+	if (oKeyShift == mKeyShift) {
 		return false;
 	}
 
-	smKeyShift = oKeyShift;
+	mKeyShift = oKeyShift;
 	return true;
 }
 

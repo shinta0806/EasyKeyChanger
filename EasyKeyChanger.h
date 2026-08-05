@@ -49,15 +49,15 @@ public:
 	// public 定数
 	// ============================================================================
 
-	// smCrossTime 範囲
+	// mCrossTime 範囲
 	const int CROSS_TIME_MIN = 0;
 	const int CROSS_TIME_MAX = 120;
 
-	// smCutTime 範囲
+	// mCutTime 範囲
 	const int CUT_TIME_MIN = 10;
 	const int CUT_TIME_MAX = 250;
 
-	// smKeyShift 範囲
+	// mKeyShift 範囲
 	static const int KEY_SHIFT_MIN = -12;
 	static const int KEY_SHIFT_MAX = +12;
 
@@ -177,13 +177,7 @@ private:
 	wstring mNoTransformReason;
 
 	// キーシフト量（KEY_SHIFT_MIN ～ KEY_SHIFT_MAX）
-	// 音声トラックごとに本フィルターのインスタンスが作られる場合があるため、
-	// どのトラックにも同じキー設定が適用されるよう、全インスタンスで共有する
-	static volatile int smKeyShift;
-
-	// 切り出し幅・クロスフェード幅をテーブル値で設定した時のキーシフト量（全インスタンス共有）
-	// （後から変換を始めたインスタンスが、ユーザー設定の切り出し幅を巻き戻さないようにするためのもの）
-	static volatile int smPrevTableKeyShift;
+	volatile int mKeyShift;
 
 	// キーごとの音声データの切り出し幅 [s]
 	int mCutTimeTableDown[-KEY_SHIFT_MIN + 1];
@@ -239,8 +233,8 @@ private:
 	// ピッチの拡大縮小率
 	double mScale;
 
-	// 切り出し幅設定 [ms]（全インスタンス共有）
-	static volatile int smCutTime;
+	// 切り出し幅設定 [ms]
+	volatile int mCutTime;
 
 	// 切り出し幅 [Frame]
 	volatile int mCutFrames;
@@ -257,8 +251,8 @@ private:
 	// 最終データを格納するバッファ（チャンネルごとに 1 本）
 	vector<vector<double>> mDest;
 
-	// クロスフェード幅設定 [ms]（全インスタンス共有）
-	static volatile int smCrossTime;
+	// クロスフェード幅設定 [ms]
+	int mCrossTime;
 
 	// クロスフェード用窓関数の値を格納するバッファ
 	vector<double> mWin;
