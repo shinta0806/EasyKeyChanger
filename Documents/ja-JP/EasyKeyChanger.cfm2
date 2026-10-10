@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
-<title>簡易キーチェンジャー Ver 1.1 ヘルプ</title>
-<link rel="stylesheet" href="HelpParts/SHIHelpG3.css" type="text/css">
-<link rel="icon" href="HelpParts/EasyKeyChanger_Icon.png" />
-<script src="HelpParts/jquery.min.js"></script>
-<script src="HelpParts/Scroll.js"></script>
-</head>
+<!-- Cfm/OutFile: EasyKeyChanger.html -->
+<!-- Cfm/IncludeFolder: ../../../../_Common/HelpIncludes -->
+<!-- Cfm/IncludeDefaultExt: html -->
+<!-- Cfm/Set: AppName = 簡易キーチェンジャー -->
+<!-- Cfm/Set: AppMajVer = Ver 1.1 -->
+<!-- Cfm/Set: Favicon = EasyKeyChanger_Icon.png -->
+<!-- Cfm/Include: Header_ja-JP -->
 
 <body>
 
@@ -26,11 +25,11 @@
 
     <p>
       <img src="HelpParts/EasyKeyChanger_Icon.png" alt="" width="128" align="right" hspace="10" vspace="10">
-      簡易キーチェンジャーは、再生中の音声のキー（音程）を、リアルタイムで上下させるための DirectShow フィルターです。イメージとしては、カラオケでキーを上げ下げするのと同様のことができます。<br>
+      <!-- Cfm/Var: AppName -->は、再生中の音声のキー（音程）を、リアルタイムで上下させるための DirectShow フィルターです。イメージとしては、カラオケでキーを上げ下げするのと同様のことができます。<br>
       <br>
       上下させる量などをブラウザで指定できるのが特徴です。<br>
       <br>
-      簡易キーチェンジャーは DirectShow フィルターですので、単体では動作しません。DirectShow フィルターを利用できる別のアプリケーション（ホストアプリケーション）と一緒にご利用下さい。<br>
+      <!-- Cfm/Var: AppName -->は DirectShow フィルターですので、単体では動作しません。DirectShow フィルターを利用できる別のアプリケーション（ホストアプリケーション）と一緒にご利用下さい。<br>
       <br>
       本ヘルプではこれ以降、具体例として、<a href="https://sourceforge.net/projects/mpcbe/" target="_blank">MPC-BE</a> をホストアプリケーションとして利用する場合の説明をします。<br>
       <br>
@@ -42,7 +41,7 @@
     <h2 id="MpcBeInstall">MPC-BE のインストール</h2>
 
     <p>
-      最初に、簡易キーチェンジャーを利用するためのホストアプリケーションとして、MPC-BE をインストールします。<br>
+      最初に、<!-- Cfm/Var: AppName -->を利用するためのホストアプリケーションとして、MPC-BE をインストールします。<br>
       <br>
       <a href="https://sourceforge.net/projects/mpcbe/" target="_blank">MPC-BE</a> のサイトから MPC-BE をダウンロードします。<br>
       <br>
@@ -59,10 +58,10 @@
       MPC-BE のバージョンが古いと正常に動作しない場合がありますのでご注意ください。<br>
     </blockquote>
 
-    <h2 id="AppInstall">簡易キーチェンジャーのインストール</h2>
+    <h2 id="AppInstall"><!-- Cfm/Var: AppName -->のインストール</h2>
 
     <p>
-      簡易キーチェンジャーは、ダウンロードした zip ファイルを好きな場所に解凍するだけで大丈夫です。<br>
+      <!-- Cfm/Var: AppName -->は、ダウンロードした zip ファイルを好きな場所に解凍するだけで大丈夫です。<br>
     </p>
 
     <h2 id="FfdshowInstall">ffdshow のインストール</h2>
@@ -83,41 +82,48 @@
     <h2 id="MpcBeSettings">MPC-BE の設定</h2>
 
     <p>
-      <a href="HelpParts/EasyKeyChanger_MpcBeMenu.webp" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeMenu.webp" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+      <a class="HoverZoomImgContainer" href="HelpParts/EasyKeyChanger_MpcBeMenu.webp" target="_blank">
+        <img class="HoverZoomImg2x" src="HelpParts/EasyKeyChanger_MpcBeMenu.webp"></a>
       MPC-BE を起動し、メニューの［表示→オプション］でオプションウィンドウを開きます。<br>
       <br>
       メニューバーが表示されていない場合は、MPC-BE のウィンドウを右クリックして表示されるコンテキストメニューから［オプション］を選びます。<br>
       <br>
       キーボードの O（オー）を押してもオプションウィンドウが開きます。<br clear="right">
       <br>
-      <a href="HelpParts/EasyKeyChanger_MpcBeGaibuFilter.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeGaibuFilter.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+      <a class="HoverZoomImgContainer" href="HelpParts/EasyKeyChanger_MpcBeGaibuFilter.webp" target="_blank">
+        <img class="HoverZoomImg2x" src="HelpParts/EasyKeyChanger_MpcBeGaibuFilter.webp"></a>
       オプションウィンドウ左側の「外部フィルター」をクリックすると、右の画面になります。<br clear="right">
     </p>
 
-    <h3 id="AppTsuika">簡易キーチェンジャーの追加</h3>
+    <h3 id="AppTsuika"><!-- Cfm/Var: AppName -->の追加</h3>
 
     <p>
-      <a href="HelpParts/EasyKeyChanger_MpcBeFilterSentaku.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFilterSentaku.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+      <a class="HoverZoomImgContainer" href="HelpParts/EasyKeyChanger_MpcBeFilterSentaku.webp" target="_blank">
+        <img class="HoverZoomImg2x" src="HelpParts/EasyKeyChanger_MpcBeFilterSentaku.webp"></a>
       「フィルターの追加」ボタンをクリックすると、右の画面のように、利用可能なフィルターの一覧が出てきます。<br clear="right">
       <br>
-      <a href="HelpParts/EasyKeyChanger_MpcBeFilterHiraku.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFilterHiraku.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+      <a class="HoverZoomImgContainer" href="HelpParts/EasyKeyChanger_MpcBeFilterHiraku.webp" target="_blank">
+        <img class="HoverZoomImg2x" src="HelpParts/EasyKeyChanger_MpcBeFilterHiraku.webp"></a>
       「参照」ボタンをクリックします。<br>
       <br>
-      開くウィンドウで、簡易キーチェンジャーを解凍したフォルダのサブフォルダにある EasyKeyChanger.dll を選択します。<br>
+      開くウィンドウで、<!-- Cfm/Var: AppName -->を解凍したフォルダのサブフォルダにある EasyKeyChanger.dll を選択します。<br>
       <br>
       EasyKeyChanger.dll を選択後、開くボタンをクリックします。<br clear="right">
       <br>
-      <a href="HelpParts/EasyKeyChanger_MpcBeEasyKeyChangerYusen.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeEasyKeyChangerYusen.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+      <a class="HoverZoomImgContainer" href="HelpParts/EasyKeyChanger_MpcBeEasyKeyChangerYusen.webp" target="_blank">
+        <img class="HoverZoomImg2x" src="HelpParts/EasyKeyChanger_MpcBeEasyKeyChangerYusen.webp"></a>
       すると、外部フィルターに「Easy Key Changer x64 (64bit)」が表示されるので、それを選択した状態で右の「優先する」のチェックを入れておきます。<br clear="right">
     </p>
 
     <h3 id="FfdshowTsuika">ffdshow Audio Processor の追加</h3>
 
     <p>
-      <a href="HelpParts/EasyKeyChanger_MpcBeFfdshowAudioProcessor.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFfdshowAudioProcessor.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+      <a class="HoverZoomImgContainer" href="HelpParts/EasyKeyChanger_MpcBeFfdshowAudioProcessor.webp" target="_blank">
+        <img class="HoverZoomImg2x" src="HelpParts/EasyKeyChanger_MpcBeFfdshowAudioProcessor.webp"></a>
       再度「フィルターの追加」ボタンをクリックし、一覧の中から「ffdshow Audio Processor」を選択して追加します。名前が似ている ffdshow Audio Decoder ではありませんので注意して下さい。<br clear="right">
       <br>
-      <a href="HelpParts/EasyKeyChanger_MpcBeFfdshowYusen.png" target="_blank"><img src="HelpParts/EasyKeyChanger_MpcBeFfdshowYusen.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+      <a class="HoverZoomImgContainer" href="HelpParts/EasyKeyChanger_MpcBeFfdshowYusen.webp" target="_blank">
+        <img class="HoverZoomImg2x" src="HelpParts/EasyKeyChanger_MpcBeFfdshowYusen.webp"></a>
       「ffdshow Audio Processor」が選択された状態で右の「優先する」のチェックを入れておきます。<br clear="right">
     </p>
 
@@ -140,18 +146,18 @@
     <h2 id="Controller">コントローラー</h2>
 
     <p>
-      簡易キーチェンジャーを使うには、次の「コントローラー」ページで使うのが簡単です。<br>
+      <!-- Cfm/Var: AppName -->を使うには、次の「コントローラー」ページで使うのが簡単です。<br>
       <br>
       MPC-BE で音楽やビデオを「再生している間」に、コントローラーページで操作して下さい。<br>
     </p>
 
     <ul>
-      <li><a href="EasyKeyChanger_Controller_JPN.html" target="_blank">簡易キーチェンジャー　コントローラー</a></li>
+      <li><a href="EasyKeyChanger_Controller.html" target="_blank"><!-- Cfm/Var: AppName -->　コントローラー</a></li>
     </ul>
 
     <blockquote>
       （補足）<br>
-      簡易キーチェンジャーは一定時間の音声データを元に音声を加工しているため、キー変更すると、音声の発声タイミングがわずかに遅くなります。<br>
+      <!-- Cfm/Var: AppName -->は一定時間の音声データを元に音声を加工しているため、キー変更すると、音声の発声タイミングがわずかに遅くなります。<br>
     </blockquote>
 
     <p>
@@ -162,7 +168,8 @@
     <h2 id="KeyHenkou">キー変更</h2>
 
     <p>
-      <a href="HelpParts/EasyKeyChanger_WebCommand.png" target="_blank"><img src="HelpParts/EasyKeyChanger_WebCommand.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
+      <a class="HoverZoomImgContainer" href="HelpParts/EasyKeyChanger_WebCommand.webp" target="_blank">
+        <img class="HoverZoomImg2x" src="HelpParts/EasyKeyChanger_WebCommand.webp"></a>
       例えば、キーを 1（半音）上げるには、Web ブラウザーのアドレスバー（URL 入力欄）に、<br>
       <a href="http://localhost:13580/command.html?key=up" target="_blank">http://localhost:13580/command.html?key=up</a><br>
       と入力して Enter キーを押します。<br>
@@ -223,7 +230,7 @@
     <h2 id="TokenCommand">連続操作防止</h2>
 
     <p>
-      簡易キーチェンジャーには、誤って同じコマンドを連続してしまうことを防止する機能があります。<br>
+      <!-- Cfm/Var: AppName -->には、誤って同じコマンドを連続してしまうことを防止する機能があります。<br>
       <br>
       コマンドを送る際、token コマンドを併用することで、連続操作を防止できます。<br>
     </p>
@@ -268,19 +275,19 @@
     <h1 id="Shiyou">仕様</h1>
 
     <p>
-      これまでの説明と重複する事柄もありますが、簡易キーチェンジャーの仕様をここにまとめておきます。<br>
+      これまでの説明と重複する事柄もありますが、<!-- Cfm/Var: AppName -->の仕様をここにまとめておきます。<br>
     </p>
 
     <h2 id="Dousakankyo2">動作環境</h2>
 
     <p>
-      簡易キーチェンジャー公式ページの<a href="https://shinta.coresv.com/software/easykeychanger_jpn/#Support" target="_blank">サポート情報</a>をご覧ください。<br>
+      <!-- Cfm/Var: AppName -->公式ページの<a href="https://shinta.coresv.com/software/easykeychanger_jpn/#Support" target="_blank">サポート情報</a>をご覧ください。<br>
     </p>
 
     <h2 id="Nyuryokuonseikeishiki">入力音声形式</h2>
 
     <p>
-      ffdshow Audio Processor などで処理された後の音声形式が、以下であれば簡易キーチェンジャーでキー変更できます。<br>
+      ffdshow Audio Processor などで処理された後の音声形式が、以下であれば<!-- Cfm/Var: AppName -->でキー変更できます。<br>
     </p>
 
     <table>
@@ -305,48 +312,14 @@
     <h1 id="Komattatokiwa">困ったときは</h1>
 
     <p>
-      簡易キーチェンジャーのサポートページをご覧ください。<br>
+      <!-- Cfm/Var: AppName -->のサポートページをご覧ください。<br>
     </p>
 
     <ul>
-      <li><a href="https://shinta.coresv.com/software/easykeychanger_jpn/#Support" target="_blank">簡易キーチェンジャー　サポートページ</a></li>
+      <li><a href="https://shinta.coresv.com/software/easykeychanger_jpn/#Support" target="_blank"><!-- Cfm/Var: AppName -->　サポートページ</a></li>
     </ul>
 
-    
-<h1 id="Onegai">お願い</h1>
-
-<h2 id="Creatorshien">クリエイター支援</h2>
-
-<h3 id="NiconicoCreatorSupport">ニコニコ動画クリエイターサポート</h3>
-
-<p>
-  <a href="https://creator-support.nicovideo.jp/registration/9520206" target="_blank"><img src="HelpParts/CreatorSupport.png" alt="" align="right" border="0" hspace="10" vspace="10"></a>
-  ニコニコ動画の<a href="https://creator-support.nicovideo.jp/registration/9520206" target="_blank">クリエイターサポート制度</a>でご支援いただけると、開発費等が助かりますので、よろしくお願いします。<br clear="right">
-</p>
-
-<h3 id="PixivFanbox">pixivFANBOX</h3>
-
-<p>
-  <a href="https://shinta0806.fanbox.cc/" target="_blank"><img src="HelpParts/PixivFanbox.png" alt="" width="256" align="right" border="0" hspace="10" vspace="10"></a>
-  クリエイター支援サイト「pixivFANBOX」内に、簡易キーチェンジャーを含む <a href="https://shinta0806.fanbox.cc/" target="_blank">SHINTA のファンサイトを開設しました</a>。<br>
-  <br>
-  フォローいただけると励みになります。<br>
-  <br>
-  有料プランにご入会頂けると、開発費等が助かりますので、よろしくお願いします。<br>
-  <br>
-  その他のご支援については<a href="https://shinta.coresv.com/info/support/" target="_blank">ウェブサイト</a>をご覧ください。<br clear="right">
-</p>
-
-<h2 id="SnsFollow">SNS フォロー</h2>
-
-<p>
-  開発者の SNS アカウントをフォローいただけると嬉しいです。<br>
-</p>
-
-<ul>
-  <li><a href="https://x.com/shinta0806" target="_blank">X (Twitter)</a></li>
-  <li><a href="https://www.nicovideo.jp/user/9520206" target="_blank">ニコニコ動画</a></li>
-</ul>
+    <!-- Cfm/Include: お願い_ja-jp -->
 
     <h1 id="Sonota">その他</h1>
 
@@ -363,7 +336,7 @@
       </tr>
       <tr>
         <th>ソフトウェア名</th>
-        <td>簡易キーチェンジャー</td>
+        <td><!-- Cfm/Var: AppName --></td>
       </tr>
       <tr>
         <th>ダウンロード</th>
@@ -386,7 +359,7 @@
     <h2 id="License">ライセンス</h2>
 
     <p>
-      簡易キーチェンジャーには以下のライセンスが適用されます。<br>
+      <!-- Cfm/Var: AppName -->には以下のライセンスが適用されます。<br>
     </p>
 
     <ul>
@@ -401,47 +374,16 @@
     <h2 id="Kaiteirireki">改訂履歴</h2>
 
     <p>
-      簡易キーチェンジャーの改訂履歴は以下をご覧ください。<br>
+      <!-- Cfm/Var: AppName -->の改訂履歴は以下をご覧ください。<br>
     </p>
 
     <ul>
-      <li><a href="EasyKeyChanger_History_JPN.txt" target="_blank">EasyKeyChanger_History_JPN.txt</a></li>
+      <li><a href="EasyKeyChanger_History.txt" target="_blank">EasyKeyChanger_History.txt</a></li>
     </ul>
 
   </div><!-- MainCol -->
 
-  
-<!-- ★★★　左側メニュー　★★★ -->
-<a name="LColMenu"></a>
-<div id="LCol">
-
-<div class="TocArea">
-  <div class="TocItemH1"><a href="#Hajimeni">はじめに</a></div>
-  <div class="TocItemH1"><a href="#Install">インストール</a></div>
-  <div class="TocItemH2"><a href="#MpcBeInstall">MPC-BE のインストール</a></div>
-  <div class="TocItemH2"><a href="#AppInstall">簡易キーチェンジャーのインストール</a></div>
-  <div class="TocItemH2"><a href="#FfdshowInstall">ffdshow のインストール</a></div>
-  <div class="TocItemH2"><a href="#MpcBeSettings">MPC-BE の設定</a></div>
-  <div class="TocItemH1"><a href="#Tsukaikata">使い方</a></div>
-  <div class="TocItemH2"><a href="#Controller">コントローラー</a></div>
-  <div class="TocItemH2"><a href="#KeyHenkou">キー変更</a></div>
-  <div class="TocItemH2"><a href="#SonotaCommand">その他</a></div>
-  <div class="TocItemH2"><a href="#TokenCommand">連続操作防止</a></div>
-  <div class="TocItemH2"><a href="#OnseishoriCommand">音声処理パラメーター変更</a></div>
-  <div class="TocItemH1"><a href="#Shiyou">仕様</a></div>
-  <div class="TocItemH2"><a href="#Dousakankyo2">動作環境</a></div>
-  <div class="TocItemH2"><a href="#Nyuryokuonseikeishiki">入力音声形式</a></div>
-  <div class="TocItemH1"><a href="#Komattatokiwa">困ったときは</a></div>
-  <div class="TocItemH1"><a href="#Onegai">お願い</a></div>
-  <div class="TocItemH2"><a href="#Creatorshien">クリエイター支援</a></div>
-  <div class="TocItemH2"><a href="#SnsFollow">SNS フォロー</a></div>
-  <div class="TocItemH1"><a href="#Sonota">その他</a></div>
-  <div class="TocItemH2"><a href="#Database">データベース</a></div>
-  <div class="TocItemH2"><a href="#License">ライセンス</a></div>
-  <div class="TocItemH2"><a href="#Kaiteirireki">改訂履歴</a></div>
-</div>
-
-</div><!-- LCol -->
+  <!-- Cfm/Include: メニュー -->
 
 </body>
 

@@ -1,0 +1,10 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Release" />
+    <BuildType Name="ReleaseDebugWrite" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="EasyKeyChanger.vcxproj" Id="538b1076-9ae9-40d7-91b3-adac0d812747" />
+</Solution>
