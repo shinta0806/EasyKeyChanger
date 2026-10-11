@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<!-- Cfm/OutFile: EasyKeyChanger.html -->
+<!-- Cfm/IncludeFolder: ../../../../_Common/HelpIncludes -->
+<!-- Cfm/IncludeDefaultExt: html -->
+<!-- Cfm/Set: AppName = Easy Key Changer -->
+<!-- Cfm/Set: AppMajVer = Ver 1.1 -->
+<!-- Cfm/Set: Favicon = EasyKeyChanger_Icon.png -->
+<!-- Cfm/Include: Header_en-US -->
+
+<body>
+
+  <!-- 先頭に戻るボタン -->
+  <div id="Top"></div>
+  <a href="#Top">
+    <div id="PageTopButton">
+      <div id="PageTopButtonText">▲</div>
+    </div>
+  </a>
+
+  <!-- ★★★　メインコンテンツ　★★★ -->
+  <div id="MainCol">
+
+    <h1 id="Hajimeni">Introduction</h1>
+
+    <p>
+      <img src="HelpParts/EasyKeyChanger_Icon.png" alt="" width="128" align="right" hspace="10" vspace="10">
+      <!-- Cfm/Var: AppName --> is a DirectShow filter that allows you to adjust the key (pitch) of audio being played in real-time. It works similarly to adjusting the key on a karaoke machine.<br>
+      <br>
+      The feature that allows you to specify the adjustment amount via a browser is a distinctive characteristic.<br>
+      <br>
+      <!-- Cfm/Var: AppName --> is a DirectShow filter, so it does not work on its own. Please use it together with another application (host application) that can utilize DirectShow filters.<br>
+      <br>
+      For the remainder of this help section, the explanation will use <a href="https://sourceforge.net/projects/mpcbe/" target="_blank">MPC-BE</a> as the host application for a concrete example.<br>
+      <br>
+      The screenshot shown is a reduced version. Clicking on it will enlarge it.<br>
+    </p>
+
+    <h1 id="Install">Installation</h1>
+
+    <h2 id="MpcBeInstall">Installing MPC-BE</h2>
+
+    <p>
+      First, install MPC-BE as the host application for <!-- Cfm/Var: AppName -->.<br>
+      <br>
+      Download MPC-BE from the <a href="https://sourceforge.net/projects/mpcbe/" target="_blank">MPC-BE</a> website.<br>
+      <br>
+      Download the 64-bit version. The 64-bit version will have "x64" in its filename.<br>
+      <br>
+      Example: MPC-BE.1.9.0.x64-installer.zip<br>
+      <br>
+      Install MPC-BE by following the instructions on the MPC-BE website. The default settings should be fine.<br>
+    </p>
+
+    <blockquote>
+      (Note)<br>
+      Operation has been verified using MPC-BE x64 1.9.0 (installer version).<br>
+      Please note that <!-- Cfm/Var: AppName --> may not function correctly if the MPC-BE version is outdated.<br>
+    </blockquote>
+
+    <h2 id="AppInstall">Installing <!-- Cfm/Var: AppName --></h2>
+
+    <p>
+      <!-- Cfm/Var: AppName --> can be installed by extracting the downloaded zip file to any location.<br>
+    </p>
+
+    <h2 id="FfdshowInstall">Installing ffdshow</h2>
+
+    <p>
+      ffdshow is included in <a href="http://ffdshow-tryout.sourceforge.net/" target="_blank">ffdshow tryouts</a>.<br>
+      <br>
+      Download ffdshow from the ffdshow tryouts <a href="http://ffdshow-tryout.sourceforge.net/download.php" target="_blank">download page</a>. Please download the 64-bit version.<br>
+      <br>
+      Install ffdshow by following the instructions on the ffdshow tryouts website. The default settings should be fine.<br>
+    </p>
+
+    <h2 id="MpcBeSettings">MPC-BE Settings</h2>
+
+    <p>
+      <a class="HoverZoomImgContainer" href="HelpParts/EasyKeyChanger_MpcBeMenu.webp" target="_blank">
+        <img class="HoverZoomImg2x" src="HelpParts/EasyKeyChanger_MpcBeMenu.webp"></a>
+      Start MPC-BE and open the options window from the menu bar: [View → Options].<br>
+      <br>
+      If the menu bar is not visible, right-click on the MPC-BE window and select [Options] from the context menu that appears.
+      <br>
+      Pressing the O key on the keyboard will also open the options window.<br clear="right">
+      <br>
+      <a class="HoverZoomImgContainer" href="HelpParts/EasyKeyChanger_MpcBeGaibuFilter.webp" target="_blank">
+        <img class="HoverZoomImg2x" src="HelpParts/EasyKeyChanger_MpcBeGaibuFilter.webp"></a>
+      Clicking on "External Filters" on the left side of the options window will display the available filters.<br clear="right">
+    </p>
+
+    <h3 id="AppTsuika">Adding <!-- Cfm/Var: AppName --></h3>
+
+    <p>
+      <a class="HoverZoomImgContainer" href="HelpParts/EasyKeyChanger_MpcBeFilterSentaku.webp" target="_blank">
+        <img class="HoverZoomImg2x" src="HelpParts/EasyKeyChanger_MpcBeFilterSentaku.webp"></a>
+      Click the "Add Filter" button to display the list of available filters.<br clear="right">
+      <br>
+      <a class="HoverZoomImgContainer" href="HelpParts/EasyKeyChanger_MpcBeFilterHiraku.webp" target="_blank">
+        <img class="HoverZoomImg2x" src="HelpParts/EasyKeyChanger_MpcBeFilterHiraku.webp"></a>
+      Click the "Browse" button.<br>
+      <br>
+      In the window that opens, select the EasyKeyChanger.dll file in the subfolder of the folder where you extracted <!-- Cfm/Var: AppName -->.<br>
+      <br>
+      After selecting EasyKeyChanger.dll, click the "Open" button.<br clear="right">
+      <br>
+      <a class="HoverZoomImgContainer" href="HelpParts/EasyKeyChanger_MpcBeEasyKeyChangerYusen.webp" target="_blank">
+        <img class="HoverZoomImg2x" src="HelpParts/EasyKeyChanger_MpcBeEasyKeyChangerYusen.webp"></a>
+      "Easy Key Changer x64 (64bit)" will then appear in the external filter list; select it and check the "Prioritize" box on the right.<br clear="right">
+    </p>
+
+    <h3 id="FfdshowTsuika">Adding ffdshow Audio Processor</h3>
+
+    <p>
+      <a class="HoverZoomImgContainer" href="HelpParts/EasyKeyChanger_MpcBeFfdshowAudioProcessor.webp" target="_blank">
+        <img class="HoverZoomImg2x" src="HelpParts/EasyKeyChanger_MpcBeFfdshowAudioProcessor.webp"></a>
+      Click the "Add Filter" button again and select "ffdshow Audio Processor" from the list to add it. Note that it is not the "ffdshow Audio Decoder" with a similar name.<br clear="right">
+      <br>
+      <a class="HoverZoomImgContainer" href="HelpParts/EasyKeyChanger_MpcBeFfdshowYusen.webp" target="_blank">
+        <img class="HoverZoomImg2x" src="HelpParts/EasyKeyChanger_MpcBeFfdshowYusen.webp"></a>
+      With "ffdshow Audio Processor" selected, check the "Prefer" box on the right.<br clear="right">
+    </p>
+
+    <h1 id="Tsukaikata">Usage</h1>
+
+    <h2 id="Controller">Controller</h2>
+
+    <p>
+      To use <!-- Cfm/Var: AppName -->, it's easiest to use the "Controller" page next.
+      <br>
+      Please use the controller page to operate MPC-BE while music or video is "playing".<br>
+    </p>
+
+    <ul>
+      <li><a href="EasyKeyChanger_Controller.html" target="_blank"><!-- Cfm/Var: AppName --> Controller</a></li>
+    </ul>
+
+    <blockquote>
+      (Note)<br>
+      Since <!-- Cfm/Var: AppName --> processes audio based on a specific duration of audio data, changing the key causes a slight delay in the timing of the sound output.<br>
+    </blockquote>
+
+    <p>
+      You can also operate the system without using a controller by entering commands into the URL bar of a web browser (such as Firefox).<br>
+      <br>
+      This method is explained in the following sections.<br>
+    </p>
+
+    <h2 id="KeyHenkou">Key Change</h2>
+
+    <p>
+      <a class="HoverZoomImgContainer" href="HelpParts/EasyKeyChanger_WebCommand.webp" target="_blank">
+        <img class="HoverZoomImg2x" src="HelpParts/EasyKeyChanger_WebCommand.webp"></a>
+      For example, to raise the key by 1 (a semitone), enter the following into the web browser's address bar (URL input field):<br>
+      <a href="http://localhost:13580/command.html?key=up" target="_blank">http://localhost:13580/command.html?key=up</a><br>
+      <br>
+      This will display a message in the browser saying "key is changed. key: 1" and the key will be raised by 1.<br>
+      <br>
+      By adding commands after "http://localhost:13580/command.html?", you can control the system.<br>
+      <br>
+      The commands for changing the key are as follows. Please enter the commands in lowercase.<br>
+    </p>
+
+    <table>
+      <tr>
+        <th>Purpose</th>
+        <th>Command</th>
+        <th>Note</th>
+      </tr>
+      <tr>
+        <th>Raise Key</th>
+        <td>key=up</td>
+        <td>Raises the key by 1 (a semitone). Can be raised up to 1 octave (12 semitones).<br>Example) <a href="http://localhost:13580/command.html?key=up" target="_blank">http://localhost:13580/command.html?key=up</a></td>
+      </tr>
+      <tr>
+        <th>Lower Key</th>
+        <td>key=down</td>
+        <td>Lowers the key by 1 (a semitone). Can be lowered up to 1 octave (-12 semitones).<br>Example) <a href="http://localhost:13580/command.html?key=down" target="_blank">http://localhost:13580/command.html?key=down</a></td>
+      </tr>
+      <tr>
+        <th>Specify Key</th>
+        <td>key=n (Number)</td>
+        <td>Specifies the key change amount directly. Can be specified within the range of -12≦n≦12. Specifying 0 returns to the original song key.<br>Example) <a href="http://localhost:13580/command.html?key=-2" target="_blank">http://localhost:13580/command.html?key=-2</a></td>
+      </tr>
+    </table>
+
+    <p>
+      Depending on the host application's behavior, the key change setting will generally reset—reverting to the original key—whenever the song changes.<br>
+    </p>
+
+    <h2 id="SonotaCommand">Others</h2>
+
+    <p>
+      The commands for changing the key are as follows. Please enter the commands in lowercase.<br>
+    </p>
+
+    <table>
+      <tr>
+        <th>Purpose</th>
+        <th>Command</th>
+        <th>Note</th>
+      </tr>
+      <tr>
+        <th>Version Information</th>
+        <td>help=ver</td>
+        <td>Displays version information in the browser.<br>Example) <a href="http://localhost:13580/command.html?help=ver" target="_blank">http://localhost:13580/command.html?help=ver</a></td>
+      </tr>
+    </table>
+
+    <h2 id="TokenCommand">Continuous Operation Prevention</h2>
+
+    <p>
+      <!-- Cfm/Var: AppName --> includes a feature that prevents the same command from being executed consecutively by mistake.<br>
+      <br>
+      When sending commands, you can use the token command to prevent continuous operations.<br>
+    </p>
+
+    <table>
+      <tr>
+        <th>Purpose</th>
+        <th>Command</th>
+        <th>Note</th>
+      </tr>
+      <tr>
+        <th>Continuous Operation Prevention</th>
+        <td>token=s (String)</td>
+        <td>When used with other commands, it prevents continuous operations by only accepting the command if the current token string is different from the previous one.<br>For example, if you initially add token=a to raise the key, the key will be raised. However, if you try to raise the key again with token=a, it will not work. To raise the key again, you would need to add a different token string like token=b.<br>Example) <a href="http://localhost:13580/command.html?key=up&token=a" target="_blank">http://localhost:13580/command.html?key=up&amp;token=a</a></td>
+      </tr>
+    </table>
+
+    <h2 id="OnseishoriCommand">Audio Processing Parameter Changes</h2>
+
+    <p>
+      Changes the parameters used for audio processing during key changes. Normally, this command is not needed. Setting inappropriate values may cause unexpected behavior.<br>
+    </p>
+
+    <table>
+      <tr>
+        <th>Purpose</th>
+        <th>Command</th>
+        <th>Note</th>
+      </tr>
+      <tr>
+        <th>Crossfade Width Change</th>
+        <td>cross=n (Number)</td>
+        <td>Changes the crossfade width. The unit is milliseconds. The default value is restored when the key is changed.<br>Example) http://localhost:13580/command.html?cross=10</td>
+      </tr>
+      <tr>
+        <th>Cut Width Change</th>
+        <td>cut=n (Number)</td>
+        <td>Changes the cut width. The unit is milliseconds. The default value is restored when the key is changed.<br>Example) http://localhost:13580/command.html?cut=60</td>
+      </tr>
+    </table>
+
+    <h1 id="Shiyou">Specifications</h1>
+
+    <p>
+      There may be some overlap with previous explanations, but here are the specifications for <!-- Cfm/Var: AppName -->.<br>
+    </p>
+
+    <h2 id="Dousakankyo2">Operating Environment</h2>
+
+    <p>
+      Please refer to the <a href="https://shinta.coresv.com/software/easykeychanger_jpn/#Support" target="_blank">support information</a> on the official <!-- Cfm/Var: AppName --> page.<br>
+    </p>
+
+    <h2 id="Nyuryokuonseikeishiki">Input Audio Format</h2>
+
+    <p>
+      The audio format processed by ffdshow Audio Processor  or similar tools must be in the following format to allow key changes with <!-- Cfm/Var: AppName -->.<br>
+    </p>
+
+    <table>
+      <tr>
+        <th>Format</th>
+        <td>Linear PCM</td>
+      </tr>
+      <tr>
+        <th>Sampling Rate</th>
+        <td>4 kHz ～ 384 kHz</td>
+      </tr>
+      <tr>
+        <th>Bit Depth</th>
+        <td>16 / 24 / 32 bit Integer or 32 bit Floating Point</td>
+      </tr>
+      <tr>
+        <th>Channel Count</th>
+        <td>1 ～ 8 ch</td>
+      </tr>
+    </table>
+
+    <h1 id="Komattatokiwa">Troubleshooting</h1>
+
+    <p>
+      Please refer to the support page for <!-- Cfm/Var: AppName -->.<br>
+    </p>
+
+    <ul>
+      <li><a href="https://shinta.coresv.com/software/easykeychanger_jpn/#Support" target="_blank">Support page for <!-- Cfm/Var: AppName --></a></li>
+    </ul>
+
+    <!-- Cfm/Include: お願い_en-US -->
+
+    <h1 id="Sonota">Others</h1>
+
+    <h2 id="Database">Database</h2>
+
+    <table>
+      <tr>
+        <th>By type</th>
+        <td>Freeware</td>
+      </tr>
+      <tr>
+        <th>Classification</th>
+        <td>DirectShow Filter</td>
+      </tr>
+      <tr>
+        <th>Software Name</th>
+        <td><!-- Cfm/Var: AppName --></td>
+      </tr>
+      <tr>
+        <th>Download</th>
+        <td><a href="https://shinta.coresv.com/software/easykeychanger_jpn/#Download" target="_blank">https://shinta.coresv.com/software/easykeychanger_jpn/#Download</a>（Main）<br><a href="http://shinta0806be.ldblog.jp/archives/9212448.html" target="_blank">http://shinta0806be.ldblog.jp/archives/9212448.html</a>（Backup）</td>
+      </tr>
+      <tr>
+        <th>Author</th>
+        <td>SHINTA</td>
+      </tr>
+      <tr>
+        <th>Author E-Mail</th>
+        <td><img src="HelpParts/MailAddrG2.png" border="0"></td>
+      </tr>
+      <tr>
+        <th>Product Number</th>
+        <td>SHWI-040-A</td>
+      </tr>
+    </table>
+
+    <h2 id="License">License</h2>
+
+    <p>
+      The following license applies to <!-- Cfm/Var: AppName -->:<br>
+    </p>
+
+    <ul>
+      <li><a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">Creative Commons License (Attribution-NonCommercial-NoDerivatives 4.0 International)</a></li>
+    </ul>
+
+    <p>
+      *This excludes portions provided by third parties that are subject to the original license.<br>
+      *If you wish to use this for commercial purposes (such as YouTube monetization), see <a href="https://shinta.coresv.com/english/commercial-use/" target="_blank">here</a>.<br>
+      *Please also see our <a href="#Onegai">request</a>.
+    </p>
+
+  </div><!-- MainCol -->
+
+  <!-- Cfm/Include: メニュー -->
+
+</body>
+
+</html>
