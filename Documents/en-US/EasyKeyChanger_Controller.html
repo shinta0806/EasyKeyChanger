@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title lang-key="Title">Easy Key Changer controller</title>
+	<link rel="stylesheet" href="HelpParts/SHIHelpG3.css" type="text/css">
+</head>
+
+<body>
+
+	<h1 id="Controller" lang-key="Title">Easy Key Changer controller</h1>
+
+	<p lang-key="AppDescription">
+		If the Easy Key Changer is enabled alongside the host application, you can control it here.
+	</p>
+
+	<table>
+		<tr>
+			<td class="Layout">
+				<button type="submit" value="KeyDown" onClick="key_down_clicked()" lang-key="KeyDown">b</button>
+				<input type="range" id="KeyRange" name="KeyRange" value="0" min="-12" max="12" step="1" onChange="key_range_changed()">
+				<button type="submit" value="KeyUp" onClick="key_up_clicked()" lang-key="KeyUp">#</button>
+			</td>
+		</tr>
+		<tr>
+			<td class="Layout">
+				<div id="KeyState" class="Centering">&nbsp;
+				</div>
+			</td>
+		</tr>
+		<tr>
+			<td class="Layout">
+				<div class="Centering">
+					<button type="submit" value="Origin" onClick="origin_clicked()" lang-key="Origin">Original key</button>
+				</div>
+			</td>
+		</tr>
+	</table>
+
+	<p>
+		&nbsp;
+	</p>
+
+	<p>
+		<button type="submit" value="About" onClick="about_clicked()" lang-key="About">About Easy Key Changer</button><br>
+	<div id="AboutEKC">&nbsp;</div>
+	</p>
+
+	<p>
+		<a id="HelpLink" href="EasyKeyChanger.html" target="_blank" lang-key="Help">Help</a><br>
+	</p>
+
+
+	<h3 id="Browser" lang-key="BrowserSupport">Easy Key Changer controller browser support</h3>
+
+	<table>
+		<tr>
+			<td lang-key="SupportedBrowsers">
+				✅ Supported browsers
+			</td>
+			<td>
+				Firefox (153), Chrome (151), Microsoft Edge (151)
+			</td>
+		</tr>
+	</table>
+
+	<h2 id="Settings" lang-key="Settings">Settings</h2>
+
+	<p lang-key="SettingsDescription">
+		*You do not normally need to change this.<br>
+	</p>
+
+	<table>
+		<tr>
+			<td class="Layout">
+				<div class="RightAlign" lang-key="Server">Server:</div>
+			</td>
+			<td class="Layout">http://<input type="text" id="Server" name="Server" value="localhost" size="60"></td>
+		</tr>
+		<tr>
+			<td class="Layout">
+				<div class="RightAlign" lang-key="Port">Port:</div>
+			</td>
+			<td class="Layout"><input type="text" id="Port" name="Port" value="13580" size="10"></td>
+		</tr>
+	</table>
+
+	<script type="text/javascript">
+		// デバッグ出力するかどうか
+		const DEBUG_WRITE = false;
+
+		// 簡易キーチェンジャーのキーを示す応答
+		const EKC_KEY = "key:";
+
+		// HTTP OK
+		const HTTP_STATUS_OK = 200;
+
+		// XMLHttpRequest.DONE の代替（ActiveXObject 系でも動くように）
+		const READY_STATUS_DONE = 4;
+
+		// 言語リソース
+		const LANG_RES = {
+			// 英語は基本的に HTML 側の内容を使用するので空でよい。メッセージ等のみここに記述する
+			"en-US": {
+				// メッセージ等
+				"AboutError": "Unable to retrieve version information.<br>",
+				"CurrentKey": "Current key: ",
+				"ErrorSupplement": "Please ensure that Easy Key Changer is enabled and you are using a supported browser.",
+				"KeyChangeError": "Unable to change the key.<br>",
+				"KeyLimitDown": "The key cannot be lowered below -12.",
+				"KeyLimitUp": "The key cannot be raised above 12.",
+			},
+			// 日本語
+			"ja-JP": {
+				// HTML
+				"Title": "簡易キーチェンジャー　コントローラー",
+				"AppDescription": "ホストアプリケーションと共に簡易キーチェンジャーが有効になっている場合、ここで操作できます。",
+				"KeyDown": "♭",
+				"KeyUp": "＃",
+				"Origin": "原曲キー",
+				"About": "簡易キーチェンジャーのバージョン情報",
+				"Help": "ヘルプ",
+				"BrowserSupport": "簡易キーチェンジャーコントローラーのブラウザ対応状況",
+				"SupportedBrowsers": "✅ 対応ブラウザ",
+				"Settings": "設定",
+				"SettingsDescription": "※通常は変更する必要はありません。",
+				"Server": "サーバー：",
+				"Port": "ポート番号：",
+				// メッセージ等
+				"AboutError": "バージョン情報を取得できません。<br>",
+				"CurrentKey": "現在のキー： ",
+				"ErrorSupplement": "簡易キーチェンジャーが有効になっているか、対応ブラウザを使用しているか、確認して下さい。",
+				"KeyChangeError": "キーを変更できません。<br>",
+				"KeyLimitDown": "キーは -12 までしか下げられません。",
+				"KeyLimitUp": "キーは 12 までしか上げられません。",
+			},
+		};
+
+		// デフォルト言語
+		const DEFAULT_LANG = "en-US";
+
+		// 使用言語
+		var use_lang = DEFAULT_LANG;
+
+		// バージョン情報ボタンがクリックされたイベントハンドラー
+		function about_clicked() {
+			var request = create_xml_http_request();
+			var url = server_url() + "?help=ver";
+
+			request.open("GET", url, true);
+			request.onreadystatechange = function () { about_ready_state_changed(request) };
+			request.send("");
+		}
+
+		// 簡易キーチェンジャーからの応答状態が変化したイベントハンドラー
+		function about_ready_state_changed(request) {
+			if (request.readyState != READY_STATUS_DONE) {
+				return;
+			}
+
+			var msg = "";
+			if (request.status == HTTP_STATUS_OK) {
+				var pos = request.responseText.indexOf("key is");
+				debug_write("about_ready_state_changed() responseText: " + request.responseText);
+				debug_write("about_ready_state_changed() pos: " + pos);
+				if (pos) {
+					msg = request.responseText.substr(0, pos);
+				} else {
+					msg = request.responseText;
+				}
+				msg = msg.replace(/ /g, "&nbsp;");
+				msg = msg.replace(/\r\n/g, "<br>");
+				debug_write("about_ready_state_changed() msg: " + msg);
+			}
+			if (msg == "") {
+				msg = get_lang_msg("AboutError") + error_supplement();
+			}
+
+			document.getElementById("AboutEKC").innerHTML = msg;
+		}
+
+		// 簡易キーチェンジャー用のトークンを作成（Chrome でコマンド多重送信が発生するらしいので）
+		function create_token() {
+			var seed = "S";
+
+			seed += (new Date()).getTime() + "; ";
+			seed += window.navigator.userAgent;
+			var token = encodeURIComponent(seed);
+			//debug_write("create_token() token: " + token);
+
+			return token;
+		}
+
+		// Ajax 用オブジェクトを作成
+		function create_xml_http_request() {
+			if (window.XMLHttpRequest) {
+				return new XMLHttpRequest();
+			} else if (window.ActiveXObject) {
+				try {
+					return new ActiveXObject("Msxml2.XMLHTTP");
+				} catch (excep) {
+					try {
+						return new ActiveXObject("Microsoft.XMLHTTP");
+					} catch (excep2) {
+						return null;
+					}
+				}
+			} else {
+				return null;
+			}
+		}
+
+		// デバッグ出力
+		function debug_write(msg) {
+			if (DEBUG_WRITE) {
+				console.log(msg);
+			}
+		}
+
+		// エラーの補足文章
+		function error_supplement() {
+			return get_lang_msg("ErrorSupplement");
+		}
+
+		// 多言語メッセージを取得
+		function get_lang_msg(key) {
+			if (LANG_RES[use_lang] && LANG_RES[use_lang][key]) {
+				return LANG_RES[use_lang][key];
+			} else {
+				return key;
+			}
+		}
+
+		// キー下げボタンがクリックされたイベントハンドラー
+		function key_down_clicked() {
+			var key = Number(document.getElementById("KeyRange").value);
+			if (key <= -12) {
+				document.getElementById("KeyState").innerHTML = get_lang_msg("KeyLimitDown");
+			} else {
+				document.getElementById("KeyRange").value = key - 1;
+				send_current_key();
+			}
+		}
+
+		// キースライダーが変更されたイベントハンドラー
+		function key_range_changed() {
+			debug_write("key_range_changed() value: " + document.getElementById("KeyRange").value);
+			send_current_key();
+		}
+
+		// キー上げボタンがクリックされたイベントハンドラー
+		function key_up_clicked() {
+			var key = Number(document.getElementById("KeyRange").value);
+			if (key >= 12) {
+				document.getElementById("KeyState").innerHTML = get_lang_msg("KeyLimitUp");
+			} else {
+				document.getElementById("KeyRange").value = key + 1;
+				send_current_key();
+			}
+		}
+
+		// 原曲キーボタンがクリックされたイベントハンドラー
+		function origin_clicked() {
+			document.getElementById("KeyRange").value = 0;
+			send_current_key();
+		}
+
+		// 現在スライダーで設定されているキーを簡易キーチェンジャーに送る
+		function send_current_key() {
+			var request = create_xml_http_request();
+			var url = server_url() + "?key=" + document.getElementById("KeyRange").value + "?token=" + create_token();
+
+			request.open("GET", url, true);
+			request.onreadystatechange = function () { send_current_key_ready_state_changed(request) };
+			request.send("");
+		}
+
+		// 簡易キーチェンジャーからの応答状態が変化したイベントハンドラー
+		function send_current_key_ready_state_changed(request) {
+			if (request.readyState != READY_STATUS_DONE) {
+				return;
+			}
+
+			var msg = "";
+			if (request.status == HTTP_STATUS_OK) {
+				var pos = request.responseText.indexOf(EKC_KEY);
+				if (pos) {
+					msg = get_lang_msg("CurrentKey");
+					key = Number(request.responseText.substr(pos + EKC_KEY.length));
+					if (key > 0) {
+						msg += "+" + key;
+					} else {
+						msg += key;
+					}
+				}
+			}
+			if (msg == "") {
+				msg = get_lang_msg("KeyChangeError") + error_supplement();
+			}
+
+			document.getElementById("KeyState").innerHTML = msg;
+		}
+
+		// 簡易キーチェンジャーのコマンド送付 URL
+		function server_url() {
+			return "http://" + document.getElementById("Server").value + ":" + document.getElementById("Port").value
+				+ "/command.html";
+		}
+
+		// 使用言語で表示
+		function set_language() {
+			if (LANG_RES[use_lang]) {
+				// 表示
+				var elements = document.querySelectorAll("[lang-key]");
+				for (var i = 0; i < elements.length; i++) {
+					var key = elements[i].getAttribute("lang-key");
+					if (LANG_RES[use_lang][key]) {
+						elements[i].innerHTML = LANG_RES[use_lang][key];
+					}
+				}
+
+				// リンク先
+				var link = document.getElementById("HelpLink");
+				var url = link.getAttribute('href');
+				link.setAttribute("href", "../" + use_lang + "/" + url);
+			}
+		}
+
+		// ページロード後（画像等は完了していない可能性があり、onLoad より前）に実行
+		window.addEventListener("DOMContentLoaded", function () {
+			var lang = window.navigator.language.toLowerCase();
+			debug_write("lang: " + lang);
+			if (lang.startsWith("ja")) {
+				use_lang = "ja-JP";
+			}
+			if (use_lang != DEFAULT_LANG) {
+				set_language();
+			}
+		});
+	</script>
+
+</body>
+
+</html>
